@@ -1,49 +1,1583 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>準備中 — worldcup-rb</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W杯 4カ国順位予想ゲーム</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0b0b10; --card:#15151d; --line:#2a2a37; --tx:#f4efe6; --muted:#9b96a0;
-    --g-hi:#f3dca0; --g-mid:#d4af7c; --g-lo:#9c7b46;
+    --tx:#f3f3f8;--muted:#8a8aa0;
+    --bg:#0a0a10;--panel:#14141e;--panel2:#1b1b28;
+    --violet:#7c3aed;--violetL:#a78bfa;--lime:#c6ff00;--pink:#ff3d81;--blue:#00d4ff;--orange:#ff8a00;
+    --g-hi:#d6ff4d;--g-mid:#c6ff00;--g-lo:#a9d900;
+    --gold:#c6ff00;--gold-soft:#a9d900;
+    --card:#14141e;--line:#262636;--row:#1b1b28;
+    --c1:#ff3d81;--c2:#ff8a00;--c3:#ffd60a;--c4:#27e07a;--c5:#00d4ff;--c6:#3d7bff;--c7:#a855f7;--c8:#ff52c0;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{
-    background:radial-gradient(1200px 600px at 50% -10%,rgba(212,175,124,.10),transparent 60%),var(--bg);
-    color:var(--tx); font-family:"Noto Sans JP",system-ui,sans-serif;
-    display:flex; align-items:center; justify-content:center; min-height:100dvh; padding:24px; text-align:center;
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Space Grotesk","Noto Sans JP",sans-serif;color:var(--tx);line-height:1.7;-webkit-font-smoothing:antialiased;min-height:100vh;background:var(--bg)}
+  ::selection{background:var(--lime);color:#0a0a10}
+  .gold-text{background:linear-gradient(135deg,var(--lime),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 16px 90px}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:22px 0 6px}
+  .htitle{font-weight:900;font-size:clamp(18px,4.8vw,26px);letter-spacing:.02em}
+  .htitle small{display:block;font-weight:700;font-size:11px;letter-spacing:.26em;color:var(--gold);margin-bottom:2px}
+  .lock{display:flex;align-items:center;gap:9px}
+  .lock .tr{height:54px;width:auto;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
+  /* accent bar */
+  .stripe{height:4px;border-radius:99px;margin:10px 0 4px;
+    background:linear-gradient(90deg,var(--lime),var(--blue) 36%,var(--violetL) 66%,var(--pink));
+    box-shadow:0 0 16px rgba(167,139,250,.30)}
+
+  nav{display:flex;gap:5px;flex-wrap:wrap;position:sticky;top:0;z-index:20;padding:10px 0;
+    background:linear-gradient(180deg,var(--bg) 72%,rgba(10,10,16,0));margin-bottom:6px}
+  nav button{font-family:inherit;font-weight:600;font-size:13px;color:var(--muted);background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:8px 13px;cursor:pointer;transition:color .15s,background .15s}
+  nav button:hover{color:var(--tx);background:var(--panel2)}
+  nav button.on{color:#0a0a10;background:var(--lime);border-color:transparent;font-weight:700}
+
+  .view{display:none;animation:fade .25s both}.view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+
+  .barh{display:flex;align-items:baseline;gap:12px;color:var(--tx);font-family:"Anton",sans-serif;font-weight:400;
+    font-size:clamp(24px,5vw,34px);line-height:.95;letter-spacing:.01em;margin:26px 0 14px;padding:0}
+  .barh .en{margin-left:auto;font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:.18em;font-size:11px;text-transform:uppercase;color:var(--violetL);align-self:center}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:12px 0}
+  .gcard,.dg,.pf-item{border-radius:18px}
+  .hint{color:var(--muted);font-size:12.5px;margin:4px 0 10px}
+  h2.sec{font-weight:900;font-size:15px;margin:4px 0}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:9px 7px;text-align:center;border-bottom:1px solid var(--line)}
+  th{color:var(--gold);font-weight:700;font-size:12px}
+  td.l,th.l{text-align:left}
+  tr:last-child td{border-bottom:0}
+
+  /* leaderboard */
+  .lb .pl{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:15px;margin:8px 0;background:var(--panel);
+    border:1px solid var(--line);border-left:5px solid var(--pc,var(--lime))}
+  .lb .pl.r1{background:linear-gradient(100deg,rgba(124,58,237,.30),rgba(255,61,129,.14));border-color:transparent}
+  .ranknum{font-family:"Anton",sans-serif;font-size:24px;width:30px;text-align:center;color:var(--muted)}
+  .r1 .ranknum{color:transparent;background:linear-gradient(180deg,var(--g-hi),var(--g-lo));-webkit-background-clip:text;background-clip:text}
+  .pmid{flex:1;min-width:0}
+  .pname{font-weight:900;font-size:16px}
+  .pbar{height:7px;border-radius:5px;background:var(--pc,#a78bfa);margin-top:5px;min-width:3px;transition:width .4s}
+  .bd{font-size:11px;color:var(--muted);margin-top:3px}
+  .bd .lb-played{color:var(--gold);font-weight:700}
+  .ptotal{font-family:"Anton",sans-serif;font-size:26px;flex:none}
+  .lb-item{margin:8px 0}
+  .lb-item .pl{margin:0;width:100%}
+  .pl.click{cursor:pointer}
+  .lb-caret{flex:none;color:var(--gold);font-size:12px;width:14px;text-align:center;align-self:center}
+  .lb-detail{margin-top:3px}
+  .lb-detail-in{background:var(--row);border:1px solid var(--line);border-radius:12px;padding:6px 12px 9px}
+  .lbd-r{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 1px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .lbd-r:last-of-type{border-bottom:0}
+  .lbd-team{font-weight:700;display:flex;align-items:center;gap:5px}
+  .lbd-mid{color:var(--muted);flex:1;min-width:70px}
+  .lbd-tag{font-size:9.5px;font-weight:900;border-radius:5px;padding:1px 6px;flex:none}
+  .lbd-tag.w{background:rgba(198,255,0,.16);color:var(--lime)}
+  .lbd-tag.d{background:rgba(255,255,255,.1);color:var(--muted)}
+  .lbd-tag.gk{background:var(--orange);color:#241404}
+  .lbd-tag.b{background:rgba(167,139,250,.2);color:var(--violetL)}
+  .lbd-tag.k{background:rgba(0,212,255,.16);color:var(--blue)}
+  .lbd-tag.l{background:rgba(255,61,129,.16);color:var(--pink)}
+  .lbd-tag.bet{background:rgba(255,214,10,.16);color:#ffd60a}
+  .lbd-pt{font-family:"Anton",sans-serif;font-size:15px;color:var(--lime);flex:none;width:40px;text-align:right}
+  .lbd-pt.neg{color:var(--pink)}
+  .lbd-tot{text-align:right;font-size:12px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+  .lbd-tot b{font-family:"Anton",sans-serif;font-size:16px;color:var(--tx);margin:0 2px}
+
+  /* draft under leaderboard */
+  .draftgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .dg{background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .dg .gh{background:linear-gradient(90deg,var(--violet),var(--pink));color:#fff;font-family:"Anton",sans-serif;font-weight:400;padding:8px 13px;font-size:15px;letter-spacing:.02em}
+  .drow{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
+  .drow:last-child{border-bottom:0}
+  .drow .fn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .drow select{font-size:12px;padding:4px 6px;max-width:96px}
+
+  /* group standings */
+  .groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .gcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .gcard .tbw{overflow-x:auto}
+  .gcard .gh{background:linear-gradient(90deg,var(--violet),var(--pink));color:#fff;font-family:"Anton",sans-serif;font-weight:400;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;font-size:16px}
+  .gcard table{font-size:12.5px}.gcard th,.gcard td{padding:7px 5px}
+  .gcard td.l{text-align:left;font-weight:700}
+  .ochip{display:inline-block;font-size:10px;font-weight:900;color:#1a160f;border-radius:5px;padding:1px 6px;margin-left:5px}
+  .flag{width:22px;height:15px;border-radius:2px;object-fit:contain;vertical-align:-3px;box-shadow:0 0 0 1px rgba(0,0,0,.25);flex:none;background:rgba(255,255,255,.06)}
+  /* knockout bracket */
+  .bk-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;background:var(--row);border:1px solid var(--line);margin:7px 0}
+  .bk-mno{font-family:"Anton",sans-serif;font-size:13px;color:var(--gold);min-width:36px;flex:none;text-align:center}
+  .bk-sides{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .bk-side{display:flex;align-items:center;gap:7px;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bk-slot{color:var(--gold);font-size:10px;font-weight:700;border:1px solid var(--line);border-radius:5px;padding:1px 6px;flex:none;background:rgba(167,139,250,.08)}
+  .bk-when{font-size:10px;color:var(--muted);width:74px;flex:none;text-align:right;line-height:1.3}
+  .bk-tbd{color:var(--muted);font-size:12px}
+  .bk-flow{display:flex;align-items:center;gap:10px;padding:6px 2px;border-bottom:1px solid var(--line)}
+  .bk-flow:last-child{border-bottom:0}
+  .bk-feed{font-size:13.5px;font-weight:700}
+  .bk-feed em{color:var(--muted);font-weight:400;font-style:normal;margin:0 5px}
+  /* トーナメント・ブラケット（横スクロール／接続線つき） */
+  .tb-legend{display:flex;flex-wrap:wrap;gap:6px 13px;margin:8px 0 4px;font-size:11px;color:var(--muted)}
+  .tb-key{display:inline-flex;align-items:center;gap:5px}
+  .tb-dotk{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+  .tb-champ{display:flex;align-items:center;gap:10px;margin:8px 0;padding:11px 14px;border-radius:13px;background:linear-gradient(110deg,rgba(212,175,124,.16),rgba(167,139,250,.08));border:1px solid var(--g-mid)}
+  .tb-champ .ttl{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+  .tb-champ .nm{font-family:"Anton",sans-serif;font-size:21px;letter-spacing:.01em}
+  .tb-champ .flag{width:30px;height:21px}
+  .tb-scrollhint{font-size:10.5px;color:var(--muted);text-align:right;margin:2px 2px 0}
+  .tb-wrap{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.018),transparent)}
+  .tb-canvas{position:relative}
+  .tb-links{position:absolute;left:0;top:0;pointer-events:none}
+  .tb-hd{position:absolute;top:7px;font-family:"Anton",sans-serif;font-size:12.5px;letter-spacing:.05em;color:var(--gold);text-align:center}
+  .tb-hd em{display:block;font-family:inherit;font-style:normal;font-size:8px;color:var(--muted);letter-spacing:.13em;margin-top:1px}
+  .tb-box{position:absolute;background:var(--row);border:1px solid var(--line);border-radius:9px;overflow:hidden;box-shadow:0 1px 5px rgba(0,0,0,.28)}
+  .tb-box.win{border-color:var(--g-mid)}
+  .tb-slot{display:flex;align-items:center;gap:5px;padding:5px 7px;font-size:12.5px;white-space:nowrap;overflow:hidden;border-bottom:1px solid var(--line);min-height:27px}
+  .tb-slot:last-of-type{border-bottom:0}
+  .tb-slot .flag{flex:none;width:20px;height:14px}
+  .tb-tag{flex:none;font-size:8.5px;font-weight:800;color:var(--gold);background:rgba(212,175,124,.12);border-radius:4px;padding:1px 4px;min-width:20px;text-align:center}
+  .tb-nm{overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .tb-slot.adv .tb-nm{color:var(--g-hi);font-weight:800}
+  .tb-slot.muted .tb-nm{color:var(--muted);font-weight:600}
+  .tb-slot.tbd .tb-nm{color:var(--muted);opacity:.55}
+  .tb-bdg{margin-left:auto;flex:none;font-size:8px;font-weight:800;border-radius:4px;padding:1px 4px;letter-spacing:.02em}
+  .tb-bdg.proj{background:rgba(167,139,250,.16);color:#cbbcff;border:1px solid rgba(167,139,250,.32)}
+  .tb-slot.adv .tb-av{margin-left:auto;color:var(--gold);font-size:9px;flex:none}
+  .tb-slot.adv .tb-bdg{margin-left:6px}
+  .tb-slot.act .tb-nm{color:#9fe0b0;font-weight:800}
+  .tb-slot .tb-av.act{color:#9fe0b0;font-size:11px}
+  .tb-box.act{border-color:#3a7d52}
+  .tb-champ.act{background:linear-gradient(110deg,rgba(120,200,140,.2),rgba(212,175,124,.1));border-color:#5fae7a}
+  .tb-meta{padding:4px 8px;background:rgba(0,0,0,.24);border-top:1px solid var(--line);line-height:1.3}
+  .tb-meta .tb-d{display:block;font-size:10.5px;color:var(--muted)}
+  .tb-meta .tb-d b{color:var(--gold);font-weight:800}
+  .tb-meta .tb-d i{font-style:normal;opacity:.55;margin-left:4px;font-size:9px}
+  .tb-meta .tb-v{display:block;font-size:9.5px;color:var(--tx);white-space:normal;word-break:break-word;margin-top:1px}
+  .tb-meta .tb-v.dim{color:var(--muted)}
+  .tb-meta .tb-jst{font-size:7.5px;font-weight:800;color:#0a0a10;background:var(--g-mid);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:1px}
+  .tb-meta .tb-loc{font-size:7.5px;color:var(--muted);margin-left:4px}
+  /* 決勝T日程（日程タブ） */
+  .ko-m{display:flex;align-items:center;gap:9px;padding:8px 8px;border-bottom:1px solid var(--line)}
+  .ko-no{font-family:"Anton",sans-serif;font-size:13px;color:var(--gold);min-width:34px;flex:none}
+  .ko-tm{flex:1;min-width:0;font-size:13.5px;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+  .ko-tm i{font-style:normal;color:var(--muted);font-size:11px;margin:0 3px}
+  .ko-ven{flex:none;width:96px;text-align:right;font-size:10.5px;color:var(--tx);line-height:1.3}
+  .ko-ven em{font-style:normal;color:var(--muted);font-size:9px}
+  .ko-proj{font-size:9px;font-weight:800;color:#cbbcff;background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.32);border-radius:4px;padding:1px 4px;margin-left:4px}
+  .ko-rounds{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+  .ko-round{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+  .ko-round b{font-size:13.5px}
+  .ko-round span{font-size:12px;color:var(--gold);font-weight:700}
+  @media(max-width:420px){.ko-ven{width:78px}.ko-rounds{grid-template-columns:1fr}}
+  /* fifa ranking */
+  .rk{font-family:"Anton",sans-serif;font-size:16px;color:var(--gold);width:56px}
+  /* strength index */
+  .si-item{margin:6px 0}
+  .si-row{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:8px 10px}
+  .si-row.click{cursor:pointer}
+  .si-rank{font-family:"Anton",sans-serif;font-size:15px;color:var(--muted);width:20px;text-align:center;flex:none}
+  .si-nm{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+  .si-barwrap{flex:1 1 40px;height:9px;border-radius:6px;background:var(--row);overflow:hidden;min-width:24px;margin-left:2px}
+  .si-bar{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),var(--lime))}
+  .si-score{font-family:"Anton",sans-serif;font-size:19px;flex:none;width:30px;text-align:right}
+  .si-caret{flex:none;color:var(--gold);font-size:12px;width:14px;text-align:center}
+  .si-det{margin:3px 0 0}
+  .si-detin{background:var(--row);border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+  .si-sub{display:flex;align-items:center;gap:8px;font-size:11.5px;margin:3px 0}
+  .si-sl{color:var(--muted);width:118px;flex:none}
+  .si-sbar{flex:1;height:7px;border-radius:5px;background:var(--card);overflow:hidden}
+  .si-sbar i{display:block;height:100%}
+  .si-sv{font-family:"Anton",sans-serif;font-size:13px;width:26px;text-align:right;flex:none}
+  .si-host{font-size:11px;color:var(--orange);font-weight:700;margin:4px 0 2px}
+  .so-item{border-bottom:1px solid var(--line)}
+  .so-item:last-child{border-bottom:0}
+  .so-row{display:flex;align-items:center;gap:8px;padding:7px 2px}
+  .so-row.click{cursor:pointer}
+  .so-rank{font-family:"Anton",sans-serif;font-size:15px;color:var(--muted);width:16px;text-align:center;flex:none}
+  .so-dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .so-nm{font-weight:900;font-size:14px;width:36px;flex:none}
+  .so-bar{flex:1 1 30px;height:8px;border-radius:5px;background:var(--row);overflow:hidden;min-width:20px}
+  .so-bar i{display:block;height:100%}
+  .so-sum{font-family:"Anton",sans-serif;font-size:19px;flex:none;width:42px;text-align:right}
+  .so-avg{font-size:10.5px;color:var(--muted);flex:none;width:48px;text-align:right}
+  .so-caret{flex:none;color:var(--gold);font-size:12px;width:13px;text-align:center}
+  .so-det{padding:2px 0 8px}
+  .so-cty{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .so-cty:last-child{border-bottom:0}
+  .so-cf{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+  .so-cd{font-family:"Anton",sans-serif;font-size:15px;color:var(--lime);flex:none;width:28px;text-align:right}
+  .si-raw{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7}
+  .si-raw b{color:var(--tx);font-weight:700}
+  /* pitch */
+  .pitch{position:relative;width:100%;aspect-ratio:7/10;border:1px solid rgba(255,255,255,.22);border-radius:9px;overflow:hidden;
+    background:repeating-linear-gradient(0deg,#15441f 0 11%,#103418 11% 22%);box-shadow:inset 0 0 26px rgba(0,0,0,.4)}
+  .pitch::before{content:"";position:absolute;inset:5px;border:1px solid rgba(255,255,255,.22);border-radius:3px}
+  /* named XI player markers (half-court, portfolio) */
+  .pp{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;width:60px;pointer-events:none}
+  .pp .dot{width:13px;height:13px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.6)}
+  .pp .nm{font-size:9px;line-height:1.05;text-align:center;color:#fff;text-shadow:0 1px 2px #000,0 0 4px #000;max-width:62px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* half-court (single team formation, portfolio) */
+  .pitch.half{aspect-ratio:3/4;max-width:300px;margin:0 auto}
+  .pitch.half .pp{width:46px}
+  .pitch.half .nm{max-width:48px;font-size:8.5px}
+  .pitch.half .hpline{position:absolute;left:5px;right:5px;top:5px;height:1.5px;background:rgba(255,255,255,.28)}
+  .pitch.half .hpcirc{position:absolute;left:50%;top:4px;width:32%;aspect-ratio:2/1;transform:translateX(-50%);border:1.5px solid rgba(255,255,255,.26);border-top:0;border-radius:0 0 999px 999px}
+  .pitch.half .hpbox{position:absolute;left:50%;bottom:5px;width:52%;height:14%;transform:translateX(-50%);border:1.5px solid rgba(255,255,255,.2);border-bottom:0;border-radius:3px 3px 0 0}
+  /* team detail (in portfolio) */
+  .td-top{margin:6px 0 12px}
+  .td-pitch{text-align:center}
+  .td-form{font-family:"Anton",sans-serif;font-size:17px;color:var(--gold);margin-top:6px}
+  .td-sub2{font-size:10px;color:var(--muted);letter-spacing:.12em}
+  .td-info{min-width:0}
+  .td-mgr{font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .td-lbl{font-size:10px;font-weight:900;color:#241c0c;background:linear-gradient(180deg,var(--g-hi),var(--g-lo));border-radius:5px;padding:1px 6px}
+  .td-nat{font-size:11px;color:var(--muted)}
+  .td-tac{font-size:12.5px;line-height:1.75;color:var(--tx)}
+  .td-src{font-size:10px;color:var(--muted);margin-top:6px}
+  .td-h{font-weight:900;font-size:12.5px;color:var(--gold);margin:12px 0 5px;border-bottom:1px solid var(--line);padding-bottom:3px}
+  .rec{display:flex;flex-direction:column;gap:4px}
+  .recm{display:flex;align-items:center;gap:8px;font-size:12px}
+  .rcb{font-family:"Anton",sans-serif;font-size:11px;width:18px;height:18px;line-height:18px;text-align:center;border-radius:4px;flex:none;color:#fff}
+  .rcb.rw{background:#2f9e54}.rcb.rd{background:#7d7568}.rcb.rl{background:#c0533f}
+  .rco{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rcs{font-weight:900;flex:none}
+  .rcd{color:var(--muted);font-size:10.5px;flex:none;width:62px;text-align:right}
+  @media(max-width:560px){.pp{width:54px}.pp .nm{font-size:8.5px;max-width:56px}}
+  /* match odds (1X2) */
+  .odds{display:flex;align-items:center;gap:10px;margin:-2px 0 9px;padding:2px 12px}
+  .oddbar{flex:none;width:62px;height:7px;border-radius:4px;overflow:hidden;display:flex;border:1px solid var(--line)}
+  .oddbar i{display:block;height:100%}
+  .od{display:flex;flex-direction:column;align-items:center;line-height:1.05;min-width:40px}
+  .od b{font-family:"Anton",sans-serif;font-size:13px;color:var(--tx)}
+  .od i{font-style:normal;font-size:9px;color:var(--muted);letter-spacing:.1em;margin-top:1px}
+  .od.win b{color:var(--lime)}.od.lose b{color:var(--pink)}
+  .odds .olabel{font-size:9px;color:var(--muted);letter-spacing:.1em;margin-left:auto}
+  /* portfolio */
+  .pf-summary{display:flex;align-items:center;gap:14px;background:var(--row);border:1px solid var(--line);border-left:5px solid var(--pc,#a78bfa);border-radius:12px;padding:12px 16px;margin:10px 0}
+  .pf-total{font-family:"Anton",sans-serif;font-size:30px;line-height:1}
+  .pf-total i{font-size:13px;font-style:normal;color:var(--muted);margin-left:3px}
+  .pf-bd{font-size:11.5px;color:var(--muted);flex:1;min-width:0}
+  .pf-item{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:8px 0;overflow:hidden}
+  .pf-row{display:flex;align-items:center;gap:9px;width:100%;background:transparent;border:0;color:var(--tx);font-family:inherit;cursor:pointer;padding:11px 13px;text-align:left}
+  .pf-nm{font-weight:900;font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pf-pts{font-family:"Anton",sans-serif;font-size:20px;flex:none}
+  .pf-pts i{font-size:11px;font-style:normal;color:var(--muted);margin-left:2px}
+  .pf-caret{flex:none;color:var(--gold);font-size:13px;width:16px;text-align:center}
+  .pf-sub{font-size:11.5px;color:var(--muted);padding:0 13px 4px 13px}
+  .pf-next{font-size:12px;color:var(--tx);padding:0 13px 11px 13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pf-when{color:var(--gold);font-size:11px}
+  .pf-win{font-size:10.5px;font-weight:700;color:#0a0a10;background:var(--lime);border-radius:6px;padding:1px 8px;white-space:nowrap}
+  .pf-win.gk{background:var(--orange);color:#241404}
+  .pf-squad{padding:0 10px 10px}
+  table.sqt{width:100%;border-collapse:collapse;font-size:12px}
+  table.sqt th{color:var(--gold);font-size:10.5px;font-weight:700;padding:6px 5px;border-bottom:1px solid var(--line)}
+  table.sqt td{padding:5px 5px;border-bottom:1px solid var(--line)}
+  table.sqt td.l,table.sqt th.l{text-align:left}
+  table.sqt td:not(.l){text-align:center}
+  .sqn{font-family:"Anton",sans-serif;color:var(--gold);font-size:13px;width:26px}
+  .sqgrp{font-size:10px;font-weight:900;color:var(--gold);letter-spacing:.1em;padding:8px 5px 2px}
+  .tchip{display:inline-block;font-family:"Anton",sans-serif;font-size:10px;width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;margin-left:6px;vertical-align:middle}
+  .tchip.tA{background:var(--lime);color:#0a0a10}
+  .tchip.tB{background:var(--blue);color:#06121a}
+  .tchip.tC{background:var(--violetL);color:#1a0f3a}
+  .tchip.tD{background:var(--orange);color:#241404}
+  .tchip.tX{background:rgba(255,255,255,.12);color:var(--muted)}
+  .gcard tr.adv td{background:rgba(167,139,250,.10)}
+  .gcard tr.adv .pos{color:transparent;background:linear-gradient(180deg,var(--g-hi),var(--g-lo));-webkit-background-clip:text;background-clip:text;font-weight:900}
+
+  /* schedule / scores */
+  .day{font-weight:900;font-size:13px;color:var(--gold);margin:16px 0 6px;display:flex;align-items:center;gap:8px}
+  .day::before{content:"";width:10px;height:10px;border-radius:3px;background:linear-gradient(180deg,var(--g-hi),var(--g-lo))}
+  .m{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--row);border:1px solid var(--line);margin:6px 0}
+  .m .tm{font-size:11px;color:var(--muted);width:42px;flex:none;text-align:center;line-height:1.2}
+  .m .gg{font-size:10px;font-weight:900;color:#241c0c;background:linear-gradient(180deg,var(--g-hi),var(--g-lo));border-radius:5px;padding:1px 5px;flex:none}
+  .m .tn{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m .tn.aw{text-align:right}
+  .m input{width:42px;text-align:center;font-size:15px;padding:6px 2px}
+  .m .x{color:var(--muted);font-size:11px}
+
+  input,select{font-family:inherit;color:var(--tx);background:#141330;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:14px}
+  input[type=number]{-moz-appearance:textfield}
+  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=color]{padding:2px;width:42px;height:32px;cursor:pointer}
+  .btn{font-family:inherit;font-weight:700;cursor:pointer;border:0;border-radius:11px;padding:10px 16px;font-size:13px;color:#0a0a10;background:var(--lime)}
+  .btn.ghost{background:transparent;color:var(--lime);border:1px solid var(--lime)}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .del{color:#e08a6a;background:transparent;border:1px solid rgba(224,138,106,.4);border-radius:8px;cursor:pointer;padding:4px 9px;font-size:12px}
+  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:7px 0}
+  .lbl{font-size:12px;color:var(--gold);font-weight:700;min-width:84px}
+  textarea{width:100%;min-height:150px;font-family:ui-monospace,monospace;font-size:11px;color:var(--tx);background:#141330;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .note{font-size:12.5px;color:var(--muted);background:var(--row);border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin:10px 0}
+  .note b{color:var(--tx)}
+  /* recap (matchday review) */
+  .rc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+  .rc-stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+  .rc-sv{font-family:"Anton",sans-serif;font-size:23px;color:var(--lime);line-height:1}
+  .rc-sl{font-size:10px;color:var(--muted);letter-spacing:.06em;margin-top:4px}
+  .rc-mem{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line)}
+  .rc-mem:last-child{border-bottom:0}
+  .rc-mrank{font-family:"Anton",sans-serif;font-size:16px;color:var(--muted);width:16px;text-align:center;flex:none}
+  .rc-mdot{width:11px;height:11px;border-radius:50%;flex:none}
+  .rc-mnm{font-weight:900;font-size:14px;width:40px;flex:none}
+  .rc-mbar{flex:1;height:7px;border-radius:5px;background:var(--row);overflow:hidden;min-width:30px}
+  .rc-mbar i{display:block;height:100%;transition:width .4s}
+  .rc-mpt{font-family:"Anton",sans-serif;font-size:18px;flex:none}
+  .rc-mpt i{font-size:10px;font-style:normal;color:var(--muted);margin-left:2px}
+  .rc-ed{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--lime);border-radius:0 12px 12px 0;padding:11px 14px;margin:9px 0}
+  .rc-edh{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+  .rc-edh b{font-size:14.5px}
+  .rc-ed p{font-size:13px;line-height:1.9;color:var(--muted)}
+  .rc-ed p b{color:var(--g-hi);font-weight:700}
+  .rc-tag{font-size:10px;font-weight:900;border-radius:6px;padding:2px 8px;flex:none;color:#0a0a10}
+  .rc-tag.up{background:var(--lime)}.rc-ed.up{border-left-color:var(--lime)}
+  .rc-tag.jp{background:#fff}.rc-ed.jp{border-left-color:#fff}
+  .rc-tag.star{background:var(--orange);color:#241404}.rc-ed.star{border-left-color:var(--orange)}
+  .rc-tag.goal{background:var(--pink);color:#fff}.rc-ed.goal{border-left-color:var(--pink)}
+  .rc-tag.draw{background:var(--violetL);color:#1a0f3a}.rc-ed.draw{border-left-color:var(--violetL)}
+  .rc-tag.drama{background:var(--blue);color:#06121a}.rc-ed.drama{border-left-color:var(--blue)}
+  .rc-grps{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:8px}
+  .rc-grp{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+  .rc-gh{font-family:"Anton",sans-serif;color:var(--gold);font-size:14px;display:block;margin-bottom:5px}
+  .rc-gres{display:flex;flex-direction:column;gap:4px;font-size:12px}
+  .rc-gres span{display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rc-gres b{color:var(--lime);font-family:"Anton",sans-serif;font-size:13px;margin:0 3px;flex:none}
+  .rc-tabs{display:flex;gap:6px;margin:4px 0 2px}
+  .rc-tabs button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-weight:800;font-size:13.5px;padding:9px 6px;border-radius:10px;cursor:pointer;font-family:inherit;letter-spacing:.02em}
+  .rc-tabs button .en{font-size:9.5px;color:var(--muted);display:block;font-weight:700;letter-spacing:.08em;margin-top:1px}
+  .rc-tabs button.on{background:linear-gradient(180deg,var(--g-mid),var(--g-lo));border-color:var(--g-hi);color:#15110a}
+  .rc-tabs button.on .en{color:#3a2f12}
+  @media(max-width:480px){.rc-stats{grid-template-columns:repeat(2,1fr)}}
+  .badge{width:26px;height:20px;border-radius:5px;display:inline-grid;place-items:center;font-family:"Anton",sans-serif;font-size:13px;color:#241c0c;background:linear-gradient(180deg,var(--g-hi),var(--g-lo))}
+  .rl-stage{background:linear-gradient(180deg,#191636,#0f0d24);border:2px solid var(--gold-soft);border-radius:16px;height:160px;display:grid;place-items:center;margin:12px 0;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,.6),0 0 30px rgba(139,92,246,.25)}
+  .rl-name{font-family:"Anton",sans-serif;font-size:clamp(40px,13vw,74px);letter-spacing:.04em}
+  .rl-name.pop{animation:rlpop .45s}
+  @keyframes rlpop{0%{transform:scale(1)}40%{transform:scale(1.32)}100%{transform:scale(1)}}
+  .rl-btns{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 4px}
+  .rl-btns .btn{font-size:15px;padding:12px 20px}
+  .rl-btns button:disabled{opacity:.4;cursor:default}
+  .rl-pill{display:inline-block;border:1px solid;border-radius:999px;padding:2px 11px;font-size:12px;font-weight:700;margin:2px}
+  .rl-item{display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid var(--line)}
+  .rl-item:last-child{border-bottom:0}
+  .rl-rank{font-family:"Anton",sans-serif;font-size:22px;width:30px;text-align:center;color:var(--gold)}
+  .rl-dot{width:14px;height:14px;border-radius:50%;flex:none}
+  .rl-nm{font-weight:900;font-size:17px}
+  .rl-item.cur{background:rgba(167,139,250,.08);border-radius:8px}
+  .rl-pts{margin-left:auto;font-size:12px;color:var(--muted);font-weight:700;flex:none}
+  .rl-lk{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--g-hi);min-width:96px;justify-content:flex-end}
+  .rl-lk.tbd{color:var(--muted);font-weight:600}
+  .rl-lk .flag{width:20px;height:14px}
+  /* home bento */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:2px 0 8px}
+  .bx{border-radius:18px;padding:16px;position:relative;overflow:hidden;min-height:104px;display:flex;flex-direction:column}
+  .bx.dark{background:var(--panel);border:1px solid var(--line)}
+  .bx.hero{grid-column:span 2;grid-row:span 2;background:radial-gradient(120% 120% at 100% 0%,#9333ea,#5b21b6 45%,#3b1473);color:#fff;justify-content:flex-end}
+  .bx.lime{background:var(--lime);color:#0a0a10}.bx.pink{background:var(--pink);color:#fff}.bx.blue{background:var(--blue);color:#06121a}.bx.orange{background:var(--orange);color:#0a0a10}
+  .bx.wide{grid-column:1 / -1}
+  .bx-k{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.85}
+  .bx.hero .bx-k{opacity:.9}
+  .bx-h{font-family:"Anton",sans-serif;font-size:clamp(26px,5.5vw,42px);line-height:.88;margin:auto 0 8px;font-weight:400}
+  .bx-v{font-family:"Anton",sans-serif;font-size:38px;line-height:.95;margin-top:7px;font-weight:400}
+  .bx-v .u{font-size:16px;opacity:.7;margin-left:2px}
+  .bx-s{font-size:11px;opacity:.82;margin-top:5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bx-s.muted{color:var(--muted);opacity:1}
+  .bx-lead{font-size:12px;margin-top:2px}.bx-lead b{background:var(--lime);color:#3b1473;padding:2px 9px;border-radius:99px;font-weight:700}
+  @media(max-width:640px){.bento{grid-template-columns:repeat(2,1fr)}.bx.hero{grid-column:span 2;grid-row:span 1;min-height:130px}}
+  /* home */
+  .hm-rm{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
+  .hm-rmtop{display:flex;align-items:center;gap:8px}
+  .hm-rmtop.click{cursor:pointer}
+  .hm-rmtop.click:hover .hm-score{color:var(--lime)}
+  .hm-rmtop .hm-tn{flex:1;min-width:0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+  .hm-rmtop .hm-tn.aw{justify-content:flex-end}
+  .hm-score{font-family:"Anton",sans-serif;font-size:22px;flex:none;padding:0 8px}
+  .hm-sc{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.6}
+  .hm-sc b{color:var(--tx)}
+  .hm-hl{display:flex;align-items:center;gap:0;width:100%;margin-top:10px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;background:#000;position:relative}
+  .hm-hl img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;opacity:.82}
+  .hm-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid #fff;color:#fff;display:grid;place-items:center;font-size:17px;padding-left:3px}
+  .hm-hltxt{position:absolute;left:10px;bottom:8px;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;background:rgba(0,0,0,.45);padding:2px 8px;border-radius:6px}
+  .hm-fm{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:var(--row);border:1px solid var(--line);margin:6px 0}
+  .hm-fm .hm-tm{font-family:"Anton",sans-serif;font-size:13px;color:var(--gold);width:44px;flex:none;text-align:center}
+  .hm-fm .hm-tn{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hm-fm .hm-tn.aw{text-align:right}
+  .hm-empty{color:var(--muted);font-size:13px;background:var(--row);border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center}
+  /* japan news */
+  .nws-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+  .nws{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px;text-decoration:none;color:var(--tx);transition:border-color .15s,background .15s}
+  .nws:hover{border-color:var(--lime);background:#191925}
+  .nws-t{font-weight:600;font-size:14px;line-height:1.5}
+  .nws-m{display:flex;align-items:center;gap:8px;margin-top:auto;font-size:11px}
+  .nws-src{font-weight:700;color:var(--violetL);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+  .nws-d{color:var(--muted)}
+  .nws-go{margin-left:auto;color:var(--lime);font-weight:700;white-space:nowrap}
+  /* video modal */
+  .modal{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.82);align-items:center;justify-content:center;padding:16px}
+  .modal.on{display:flex}
+  .modal-box{position:relative;width:100%;max-width:880px}
+  .modal-x{position:absolute;top:-38px;right:0;background:transparent;border:0;color:#fff;font-size:24px;cursor:pointer}
+  .modal-vid{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+  .modal-vid iframe{position:absolute;inset:0;width:100%;height:100%}
+  /* match detail (scores tab) */
+  .m-exp{flex:none;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--gold);font-size:12px;cursor:pointer;margin-left:2px;display:inline-grid;place-items:center}
+  .mdetail{margin:-2px 0 9px}
+  .mdet{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .mdet-h{font-weight:900;font-size:12px;color:var(--gold);margin:11px 0 6px;border-bottom:1px solid var(--line);padding-bottom:3px}
+  .mdet-h:first-child{margin-top:0}
+  .mdet-h .src{color:var(--muted);font-weight:400;font-size:9px;letter-spacing:.12em;margin-left:4px}
+  .mdet-h a.src.lnk{color:var(--blue);text-decoration:none}
+  .mdet-h a.src.lnk:hover{text-decoration:underline}
+  .st-poss{display:flex;align-items:center;gap:8px;font-family:"Anton",sans-serif;font-size:14px;margin-top:4px}
+  .st-pbar{flex:1;height:8px;border-radius:5px;background:var(--pink);overflow:hidden}
+  .st-pbar i{display:block;height:100%;background:var(--blue)}
+  .st-lbl2{text-align:center;font-size:10px;color:var(--muted);margin:2px 0 6px}
+  .st-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-top:7px}
+  .st-v{font-family:"Anton",sans-serif;font-size:15px;width:36px;text-align:center}
+  .st-lab{color:var(--muted)}
+  .st-cbar{display:flex;height:6px;border-radius:4px;overflow:hidden;background:var(--row);margin-top:2px}
+  .st-cbar i.l{background:var(--blue)}.st-cbar i.r{background:var(--pink);margin-left:auto}
+  .st-sub{font-weight:700;font-size:11.5px;color:var(--gold);margin:12px 0 4px}
+  .st-list{font-size:12.5px;line-height:1.8}
+  .st-list .st-tm{color:var(--muted);font-size:11px}
+  .st-card{display:inline-block;width:9px;height:12px;border-radius:2px;vertical-align:-1px;margin-right:5px;background:#f0c419}
+  .st-card.r{background:#e0533f}
+  .st-xi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .st-xih{font-size:11px;font-weight:900;color:var(--tx);border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .st-pl{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 0}
+  .st-no{color:var(--gold);font-size:10px;width:18px;flex:none;text-align:center}
+  .st-pn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .st-rt{font-family:"Anton",sans-serif;font-size:11px;flex:none;border-radius:4px;padding:0 4px;color:#14110a}
+  .st-rt.rh{background:var(--lime);color:#0a0a10}.st-rt.rm{background:#ffd60a;color:#0a0a10}.st-rt.rl{background:#ff8a8a;color:#0a0a10}
+  /* lineup pitch (Sofascore-style) */
+  .lp-team{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;margin:2px 0 3px}
+  .lp-team .lp-f{color:var(--gold);font-family:"Anton",sans-serif;font-size:11px}
+  .lp-dotk{width:10px;height:10px;border-radius:50%;flex:none}
+  .lp-pitch{position:relative;width:100%;aspect-ratio:16/10;border:1px solid rgba(255,255,255,.22);border-radius:9px;overflow:hidden;
+    background:repeating-linear-gradient(90deg,#15441f 0 11%,#103418 11% 22%);box-shadow:inset 0 0 26px rgba(0,0,0,.4);margin-bottom:8px}
+  .lp-pitch.dual{aspect-ratio:7/6}
+  .lp-mid{position:absolute;left:50%;top:5px;bottom:5px;width:1px;background:rgba(255,255,255,.22)}
+  .lp-circle{position:absolute;left:50%;top:50%;width:24%;aspect-ratio:1;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.22);border-radius:50%}
+  .lp-p{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:0;width:32px;pointer-events:none}
+  .lp-dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.4);background:var(--lpc,#3a7bdc)}
+  .lp-rt{font-family:"Anton",sans-serif;font-size:8.5px;line-height:1.25;border-radius:3px;padding:0 3px;color:#14110a;margin-top:1px}
+  .lp-rt.rh{background:var(--lime);color:#0a0a10}.lp-rt.rm{background:#ffd60a;color:#0a0a10}.lp-rt.rl{background:#ff8a8a;color:#0a0a10}
+  .lp-nm{font-size:7px;line-height:1.05;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;max-width:34px;overflow:hidden;text-overflow:ellipsis}
+  @media(max-width:560px){
+    .bd{font-size:10px}
+    .wrap{padding:0 12px 80px}
+    .draftgrid,.groups{grid-template-columns:1fr}
+    .drow select{max-width:40vw}
+    nav button{font-size:12px;padding:8px 11px}
   }
-  .wrap{max-width:560px}
-  .kicker{font-size:12px;letter-spacing:.34em;color:var(--g-mid);font-weight:800;text-transform:uppercase;margin-bottom:14px}
-  h1{
-    font-family:"Anton",sans-serif; font-weight:400; line-height:1.02; margin:0 0 10px;
-    font-size:clamp(40px,12vw,76px); letter-spacing:.02em;
-    background:linear-gradient(180deg,var(--g-hi),var(--g-mid) 55%,var(--g-lo));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .sub{font-size:clamp(15px,4.5vw,19px); font-weight:600; margin:0 0 8px}
-  .note{color:var(--muted); font-size:13px; line-height:1.9; margin:18px auto 0; max-width:420px}
-  .chip{display:inline-block;margin-top:22px;border:1px solid var(--line);background:var(--card);
-    border-radius:999px;padding:8px 16px;font-size:12.5px;color:var(--muted)}
-  .chip b{color:var(--g-hi);font-weight:700}
-  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--g-mid);margin-right:7px;
-    vertical-align:1px;animation:pulse 1.6s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  /* 4カ国順位予想ゲーム 追加 */
+  .lb-lead{font-size:10px;font-weight:800;color:#0a0a10;background:var(--lime);border-radius:5px;padding:1px 7px;margin-left:7px;vertical-align:2px}
+  .ptotal i{font-size:11px;color:var(--muted);font-weight:600;margin-left:1px}
+  .pf-stage{font-weight:700;color:var(--g-hi)}
+  .pf-st2{margin-left:8px;color:var(--muted);font-size:10.5px}
+  .pf-sub .pf-stage{color:var(--g-hi)}
+  .rl-mems{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+  .rl-mem-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .rl-mem-row b{min-width:46px}
+  .rl-mdot{width:11px;height:11px;border-radius:3px;flex:none}
+  .rl-mteams{color:var(--muted);font-size:13px}
+  .st-pred{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 2px;border-bottom:1px solid var(--line)}
+  .st-pred:last-child{border-bottom:0}
+  .st-pred .lbl{min-width:52px;font-weight:800}
+  .st-pred label{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+  .st-pred select{font-size:13px}
 </style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="kicker">Coming Soon</div>
-    <h1>準備中</h1>
-    <p class="sub">このページは現在準備中です。</p>
-    <p class="note">新しい予想ゲームのダッシュボードをここに公開予定です。<br>もうしばらくお待ちください。</p>
-    <span class="chip"><span class="dot"></span>kentar00.github.io/<b>worldcup-rb</b></span>
-  </main>
+<div class="wrap">
+  <header>
+    <div class="htitle"><small>FIFA WORLD CUP 2026</small>4カ国 順位予想</div>
+    <div class="lock"><img class="tr" src="FIFA-2026-World-Cup-White-Logo.png" alt="FIFA World Cup 2026" loading="eager"></div>
+  </header>
+  <div class="stripe"></div>
+
+  <nav id="nav">
+    <button data-v="home" class="on">ホーム</button>
+    <button data-v="lb">順位表</button>
+    <button data-v="portfolio">ポートフォリオ</button>
+    <button data-v="groups">グループ</button>
+    <button data-v="recap">振り返り</button>
+    <button data-v="scores">日程・結果</button>
+    <button data-v="bracket">決勝T表</button>
+    <button data-v="rank">FIFAランク</button>
+    <button data-v="strength">戦力指数</button>
+    <button data-v="news">日本代表</button>
+    <button data-v="settings">設定</button>
+    <button data-v="rules">ルール</button>
+    <button data-v="data">保存</button>
+  </nav>
+
+  <section class="view on" id="v-home"></section>
+  <section class="view" id="v-lb"></section>
+  <section class="view" id="v-portfolio"></section>
+  <section class="view" id="v-groups"></section>
+  <section class="view" id="v-recap"></section>
+  <section class="view" id="v-scores"></section>
+  <section class="view" id="v-bracket"></section>
+  <section class="view" id="v-rank"></section>
+  <section class="view" id="v-strength"></section>
+  <section class="view" id="v-news"></section>
+  <section class="view" id="v-settings"></section>
+  <section class="view" id="v-rules"></section>
+  <section class="view" id="v-data"></section>
+</div>
+
+<div class="modal" id="hlmodal" onclick="if(event.target===this)closeHL()">
+  <div class="modal-box">
+    <button class="modal-x" onclick="closeHL()">✕</button>
+    <div class="modal-vid"><iframe src="" title="ハイライト" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+  </div>
+</div>
+
+<script id="gamedata" type="application/json">{"players":["Mine","Naga","Tori","Oga"],"colors":{"Mine":"#e8402c","Naga":"#2f6fe0","Tori":"#2faa57","Oga":"#f2922b"},"config":{},"predict":{"Mine":{"champ":null,"runnerup":null},"Naga":{"champ":null,"runnerup":null},"Tori":{"champ":null,"runnerup":null},"Oga":{"champ":null,"runnerup":null}},"teams":{"メキシコ":{"group":"A","tier":"","owner":"Naga","flag":"🇲🇽"},"南アフリカ":{"group":"A","tier":"","owner":null,"flag":"🇿🇦"},"韓国":{"group":"A","tier":"","owner":null,"flag":"🇰🇷"},"チェコ":{"group":"A","tier":"","owner":null,"flag":"🇨🇿"},"カナダ":{"group":"B","tier":"","owner":null,"flag":"🇨🇦"},"ボスニア・ヘルツェゴビナ":{"group":"B","tier":"","owner":null,"flag":"🇧🇦"},"カタール":{"group":"B","tier":"","owner":null,"flag":"🇶🇦"},"スイス":{"group":"B","tier":"","owner":"Oga","flag":"🇨🇭"},"ブラジル":{"group":"C","tier":"","owner":"Oga","flag":"🇧🇷"},"モロッコ":{"group":"C","tier":"","owner":"Tori","flag":"🇲🇦"},"ハイチ":{"group":"C","tier":"","owner":null,"flag":"🇭🇹"},"スコットランド":{"group":"C","tier":"","owner":null,"flag":"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},"アメリカ":{"group":"D","tier":"","owner":null,"flag":"🇺🇸"},"パラグアイ":{"group":"D","tier":"","owner":null,"flag":"🇵🇾"},"オーストラリア":{"group":"D","tier":"","owner":null,"flag":"🇦🇺"},"トルコ":{"group":"D","tier":"","owner":null,"flag":"🇹🇷"},"ドイツ":{"group":"E","tier":"","owner":"Mine","flag":"🇩🇪"},"キュラソー":{"group":"E","tier":"","owner":null,"flag":"🇨🇼"},"コートジボワール":{"group":"E","tier":"","owner":null,"flag":"🇨🇮"},"エクアドル":{"group":"E","tier":"","owner":"Naga","flag":"🇪🇨"},"オランダ":{"group":"F","tier":"","owner":"Naga","flag":"🇳🇱"},"日本":{"group":"F","tier":"","owner":"Mine","flag":"🇯🇵"},"スウェーデン":{"group":"F","tier":"","owner":null,"flag":"🇸🇪"},"チュニジア":{"group":"F","tier":"","owner":null,"flag":"🇹🇳"},"ベルギー":{"group":"G","tier":"","owner":null,"flag":"🇧🇪"},"エジプト":{"group":"G","tier":"","owner":null,"flag":"🇪🇬"},"イラン":{"group":"G","tier":"","owner":null,"flag":"🇮🇷"},"ニュージーランド":{"group":"G","tier":"","owner":null,"flag":"🇳🇿"},"スペイン":{"group":"H","tier":"","owner":"Mine","flag":"🇪🇸"},"カーボベルデ":{"group":"H","tier":"","owner":null,"flag":"🇨🇻"},"サウジアラビア":{"group":"H","tier":"","owner":null,"flag":"🇸🇦"},"ウルグアイ":{"group":"H","tier":"","owner":"Tori","flag":"🇺🇾"},"フランス":{"group":"I","tier":"","owner":"Tori","flag":"🇫🇷"},"セネガル":{"group":"I","tier":"","owner":null,"flag":"🇸🇳"},"イラク":{"group":"I","tier":"","owner":null,"flag":"🇮🇶"},"ノルウェー":{"group":"I","tier":"","owner":"Oga","flag":"🇳🇴"},"アルゼンチン":{"group":"J","tier":"","owner":"Oga","flag":"🇦🇷"},"アルジェリア":{"group":"J","tier":"","owner":null,"flag":"🇩🇿"},"オーストリア":{"group":"J","tier":"","owner":null,"flag":"🇦🇹"},"ヨルダン":{"group":"J","tier":"","owner":null,"flag":"🇯🇴"},"ポルトガル":{"group":"K","tier":"","owner":"Tori","flag":"🇵🇹"},"コンゴ民主共和国":{"group":"K","tier":"","owner":null,"flag":"🇨🇩"},"ウズベキスタン":{"group":"K","tier":"","owner":null,"flag":"🇺🇿"},"コロンビア":{"group":"K","tier":"","owner":"Mine","flag":"🇨🇴"},"イングランド":{"group":"L","tier":"","owner":"Naga","flag":"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},"クロアチア":{"group":"L","tier":"","owner":null,"flag":"🇭🇷"},"ガーナ":{"group":"L","tier":"","owner":null,"flag":"🇬🇭"},"パナマ":{"group":"L","tier":"","owner":null,"flag":"🇵🇦"}},"gsMatches":[{"id":"GS1","group":"A","home":"メキシコ","away":"南アフリカ","date":"2026-06-12","time":"04:00","hs":2,"as":0},{"id":"GS2","group":"A","home":"韓国","away":"チェコ","date":"2026-06-12","time":"11:00","hs":2,"as":1},{"id":"GS3","group":"A","home":"チェコ","away":"南アフリカ","date":"2026-06-19","time":"01:00","hs":1,"as":1},{"id":"GS4","group":"A","home":"メキシコ","away":"韓国","date":"2026-06-19","time":"10:00","hs":1,"as":0},{"id":"GS5","group":"A","home":"南アフリカ","away":"韓国","date":"2026-06-25","time":"10:00","hs":1,"as":0},{"id":"GS6","group":"A","home":"チェコ","away":"メキシコ","date":"2026-06-25","time":"10:00","hs":0,"as":3},{"id":"GS7","group":"B","home":"カナダ","away":"ボスニア・ヘルツェゴビナ","date":"2026-06-13","time":"04:00","hs":1,"as":1},{"id":"GS8","group":"B","home":"カタール","away":"スイス","date":"2026-06-14","time":"04:00","hs":1,"as":1},{"id":"GS9","group":"B","home":"スイス","away":"ボスニア・ヘルツェゴビナ","date":"2026-06-19","time":"04:00","hs":4,"as":1},{"id":"GS10","group":"B","home":"カナダ","away":"カタール","date":"2026-06-19","time":"07:00","hs":6,"as":0},{"id":"GS11","group":"B","home":"スイス","away":"カナダ","date":"2026-06-25","time":"04:00","hs":2,"as":1},{"id":"GS12","group":"B","home":"ボスニア・ヘルツェゴビナ","away":"カタール","date":"2026-06-25","time":"04:00","hs":3,"as":1},{"id":"GS13","group":"C","home":"ブラジル","away":"モロッコ","date":"2026-06-14","time":"07:00","hs":1,"as":1},{"id":"GS14","group":"C","home":"ハイチ","away":"スコットランド","date":"2026-06-14","time":"10:00","hs":0,"as":1},{"id":"GS15","group":"C","home":"スコットランド","away":"モロッコ","date":"2026-06-20","time":"07:00","hs":0,"as":1},{"id":"GS16","group":"C","home":"ブラジル","away":"ハイチ","date":"2026-06-20","time":"09:30","hs":3,"as":0},{"id":"GS17","group":"C","home":"モロッコ","away":"ハイチ","date":"2026-06-25","time":"07:00","hs":4,"as":2},{"id":"GS18","group":"C","home":"スコットランド","away":"ブラジル","date":"2026-06-25","time":"07:00","hs":0,"as":3},{"id":"GS19","group":"D","home":"アメリカ","away":"パラグアイ","date":"2026-06-13","time":"10:00","hs":4,"as":1},{"id":"GS20","group":"D","home":"オーストラリア","away":"トルコ","date":"2026-06-14","time":"13:00","hs":2,"as":0},{"id":"GS21","group":"D","home":"アメリカ","away":"オーストラリア","date":"2026-06-20","time":"04:00","hs":2,"as":0},{"id":"GS22","group":"D","home":"トルコ","away":"パラグアイ","date":"2026-06-20","time":"12:00","hs":0,"as":1},{"id":"GS23","group":"D","home":"トルコ","away":"アメリカ","date":"2026-06-26","time":"11:00","hs":3,"as":2},{"id":"GS24","group":"D","home":"パラグアイ","away":"オーストラリア","date":"2026-06-26","time":"11:00","hs":0,"as":0},{"id":"GS25","group":"E","home":"ドイツ","away":"キュラソー","date":"2026-06-15","time":"02:00","hs":7,"as":1},{"id":"GS26","group":"E","home":"コートジボワール","away":"エクアドル","date":"2026-06-15","time":"08:00","hs":1,"as":0},{"id":"GS27","group":"E","home":"ドイツ","away":"コートジボワール","date":"2026-06-21","time":"05:00","hs":2,"as":1},{"id":"GS28","group":"E","home":"エクアドル","away":"キュラソー","date":"2026-06-21","time":"09:00","hs":0,"as":0},{"id":"GS29","group":"E","home":"キュラソー","away":"コートジボワール","date":"2026-06-26","time":"05:00","hs":0,"as":2},{"id":"GS30","group":"E","home":"エクアドル","away":"ドイツ","date":"2026-06-26","time":"05:00","hs":2,"as":1},{"id":"GS31","group":"F","home":"オランダ","away":"日本","date":"2026-06-15","time":"05:00","hs":2,"as":2},{"id":"GS32","group":"F","home":"スウェーデン","away":"チュニジア","date":"2026-06-15","time":"11:00","hs":5,"as":1},{"id":"GS33","group":"F","home":"オランダ","away":"スウェーデン","date":"2026-06-21","time":"02:00","hs":5,"as":1},{"id":"GS34","group":"F","home":"チュニジア","away":"日本","date":"2026-06-21","time":"13:00","hs":0,"as":4},{"id":"GS35","group":"F","home":"チュニジア","away":"オランダ","date":"2026-06-26","time":"08:00","hs":1,"as":3},{"id":"GS36","group":"F","home":"日本","away":"スウェーデン","date":"2026-06-26","time":"08:00","hs":1,"as":1},{"id":"GS37","group":"G","home":"ベルギー","away":"エジプト","date":"2026-06-16","time":"04:00","hs":1,"as":1},{"id":"GS38","group":"G","home":"イラン","away":"ニュージーランド","date":"2026-06-16","time":"10:00","hs":2,"as":2},{"id":"GS39","group":"G","home":"ベルギー","away":"イラン","date":"2026-06-22","time":"04:00","hs":0,"as":0},{"id":"GS40","group":"G","home":"ニュージーランド","away":"エジプト","date":"2026-06-22","time":"10:00","hs":1,"as":3},{"id":"GS41","group":"G","home":"ニュージーランド","away":"ベルギー","date":"2026-06-27","time":"12:00","hs":1,"as":5},{"id":"GS42","group":"G","home":"エジプト","away":"イラン","date":"2026-06-27","time":"12:00","hs":1,"as":1},{"id":"GS43","group":"H","home":"スペイン","away":"カーボベルデ","date":"2026-06-16","time":"01:00","hs":0,"as":0},{"id":"GS44","group":"H","home":"サウジアラビア","away":"ウルグアイ","date":"2026-06-16","time":"07:00","hs":1,"as":1},{"id":"GS45","group":"H","home":"スペイン","away":"サウジアラビア","date":"2026-06-22","time":"01:00","hs":4,"as":0},{"id":"GS46","group":"H","home":"ウルグアイ","away":"カーボベルデ","date":"2026-06-22","time":"07:00","hs":2,"as":2},{"id":"GS47","group":"H","home":"カーボベルデ","away":"サウジアラビア","date":"2026-06-27","time":"09:00","hs":0,"as":0},{"id":"GS48","group":"H","home":"ウルグアイ","away":"スペイン","date":"2026-06-27","time":"09:00","hs":0,"as":1},{"id":"GS49","group":"I","home":"フランス","away":"セネガル","date":"2026-06-17","time":"04:00","hs":3,"as":1},{"id":"GS50","group":"I","home":"イラク","away":"ノルウェー","date":"2026-06-17","time":"07:00","hs":1,"as":4},{"id":"GS51","group":"I","home":"フランス","away":"イラク","date":"2026-06-23","time":"06:00","hs":3,"as":0},{"id":"GS52","group":"I","home":"ノルウェー","away":"セネガル","date":"2026-06-23","time":"09:00","hs":3,"as":2},{"id":"GS53","group":"I","home":"ノルウェー","away":"フランス","date":"2026-06-27","time":"04:00","hs":1,"as":4},{"id":"GS54","group":"I","home":"セネガル","away":"イラク","date":"2026-06-27","time":"04:00","hs":5,"as":0},{"id":"GS55","group":"J","home":"アルゼンチン","away":"アルジェリア","date":"2026-06-17","time":"10:00","hs":3,"as":0},{"id":"GS56","group":"J","home":"オーストリア","away":"ヨルダン","date":"2026-06-17","time":"13:00","hs":3,"as":1},{"id":"GS57","group":"J","home":"アルゼンチン","away":"オーストリア","date":"2026-06-23","time":"02:00","hs":2,"as":0},{"id":"GS58","group":"J","home":"ヨルダン","away":"アルジェリア","date":"2026-06-23","time":"12:00","hs":1,"as":2},{"id":"GS59","group":"J","home":"アルジェリア","away":"オーストリア","date":"2026-06-28","time":"11:00","hs":3,"as":3},{"id":"GS60","group":"J","home":"ヨルダン","away":"アルゼンチン","date":"2026-06-28","time":"11:00","hs":1,"as":3},{"id":"GS61","group":"K","home":"ポルトガル","away":"コンゴ民主共和国","date":"2026-06-18","time":"02:00","hs":1,"as":1},{"id":"GS62","group":"K","home":"ウズベキスタン","away":"コロンビア","date":"2026-06-18","time":"11:00","hs":1,"as":3},{"id":"GS63","group":"K","home":"ポルトガル","away":"ウズベキスタン","date":"2026-06-24","time":"02:00","hs":5,"as":0},{"id":"GS64","group":"K","home":"コロンビア","away":"コンゴ民主共和国","date":"2026-06-24","time":"11:00","hs":1,"as":0},{"id":"GS65","group":"K","home":"コロンビア","away":"ポルトガル","date":"2026-06-28","time":"08:30","hs":0,"as":0},{"id":"GS66","group":"K","home":"コンゴ民主共和国","away":"ウズベキスタン","date":"2026-06-28","time":"08:30","hs":3,"as":1},{"id":"GS67","group":"L","home":"イングランド","away":"クロアチア","date":"2026-06-18","time":"05:00","hs":4,"as":2},{"id":"GS68","group":"L","home":"ガーナ","away":"パナマ","date":"2026-06-18","time":"08:00","hs":1,"as":0},{"id":"GS69","group":"L","home":"イングランド","away":"ガーナ","date":"2026-06-24","time":"05:00","hs":0,"as":0},{"id":"GS70","group":"L","home":"パナマ","away":"クロアチア","date":"2026-06-24","time":"08:00","hs":0,"as":1},{"id":"GS71","group":"L","home":"パナマ","away":"イングランド","date":"2026-06-28","time":"06:00","hs":0,"as":2},{"id":"GS72","group":"L","home":"クロアチア","away":"ガーナ","date":"2026-06-28","time":"06:00","hs":2,"as":1}],"koMatches":[]}</script>
+
+<script>
+const KO_ROUNDS=[["R32","ラウンド32",3],["R16","ベスト16",6],["QF","ベスト8",12],["SF","ベスト4",20],["F","決勝(優勝)",30]];
+const KO_PTS=Object.fromEntries(KO_ROUNDS.map(r=>[r[0],r[2]]));
+const KO_LABEL=Object.fromEntries(KO_ROUNDS.map(r=>[r[0],r[1]]));
+const WD=["日","月","火","水","木","金","土"];
+// 決勝トーナメント（R32）公式ブラケット・テンプレート。a/b はグループ順位スロット（現地日付）。
+// d/t は日本時間（JST）。a/b はスロット（1X=組1位, 2X=2位, 3:…=該当組の3位）。
+const R32=[
+  {no:73,d:"6/29",t:"04:00",city:"イングルウッド",a:"2A",b:"2B"},
+  {no:74,d:"6/30",t:"05:30",city:"フォックスボロ",a:"1E",b:"3:A/B/C/D/F"},
+  {no:75,d:"6/30",t:"10:00",city:"モンテレイ",a:"1F",b:"2C"},
+  {no:76,d:"6/30",t:"02:00",city:"ヒューストン",a:"1C",b:"2F"},
+  {no:77,d:"7/1",t:"06:00",city:"イーストラザフォード",a:"1I",b:"3:C/D/F/G/H"},
+  {no:78,d:"7/1",t:"02:00",city:"アーリントン",a:"2E",b:"2I"},
+  {no:79,d:"7/1",t:"10:00",city:"メキシコシティ",a:"1A",b:"3:C/E/F/H/I"},
+  {no:80,d:"7/2",t:"01:00",city:"アトランタ",a:"1L",b:"3:E/H/I/J/K"},
+  {no:81,d:"7/2",t:"09:00",city:"サンタクララ",a:"1D",b:"3:B/E/F/I/J"},
+  {no:82,d:"7/2",t:"05:00",city:"シアトル",a:"1G",b:"3:A/E/H/I/J"},
+  {no:83,d:"7/3",t:"08:00",city:"トロント",a:"2K",b:"2L"},
+  {no:84,d:"7/3",t:"04:00",city:"イングルウッド",a:"1H",b:"2J"},
+  {no:85,d:"7/3",t:"12:00",city:"バンクーバー",a:"1B",b:"3:E/F/G/I/J"},
+  {no:86,d:"7/4",t:"07:00",city:"マイアミ",a:"1J",b:"2H"},
+  {no:87,d:"7/4",t:"10:30",city:"カンザスシティ",a:"1K",b:"3:D/E/I/J/L"},
+  {no:88,d:"7/4",t:"03:00",city:"アーリントン",a:"2D",b:"2G"},
+];
+// 公式の3位通過の割り当て（試合番号→3位の組）。GS確定後に適用（greedyではなく公式表）。
+const KO_THIRD={74:"D",77:"F",79:"E",80:"K",81:"B",82:"I",85:"J",87:"L"};
+// R16以降の勝ち上がり接続: [試合番号, 上側の供給試合, 下側の供給試合]
+const FLOW=[
+  {label:"ベスト16",en:"ROUND OF 16",ms:[[90,73,75],[89,74,77],[91,76,78],[92,79,80],[93,83,84],[94,81,82],[95,86,88],[96,85,87]]},
+  {label:"ベスト8（準々決勝）",en:"QUARTER-FINALS",ms:[[97,89,90],[98,93,94],[99,91,92],[100,95,96]]},
+  {label:"ベスト4（準決勝）",en:"SEMI-FINALS",ms:[[101,97,98],[102,99,100]]},
+  {label:"決勝",en:"FINAL",ms:[[104,101,102]]},
+];
+// 開催都市 → スタジアム名（R32の各会場＋準決勝・決勝）
+const STAD={"イングルウッド":"SoFiスタジアム","フォックスボロ":"ジレット・スタジアム","モンテレイ":"エスタディオBBVA","グアダラハラ":"エスタディオ・アクロン","ヒューストン":"NRGスタジアム","イーストラザフォード":"メットライフ・スタジアム","アーリントン":"AT&Tスタジアム","メキシコシティ":"エスタディオ・アステカ","アトランタ":"メルセデス・ベンツ・スタジアム","サンタクララ":"リーバイス・スタジアム","シアトル":"ルーメン・フィールド","トロント":"BMOフィールド","バンクーバー":"BCプレイス","マイアミ":"ハードロック・スタジアム","カンザスシティ":"アローヘッド・スタジアム"};
+// 公式日程に基づくノックアウト各試合の日付・会場（R16=7/4-7、QF=7/9-11、SF=7/14-15、決勝=7/19）。
+// R16は会場未確定のため日付のみ。QF/SF/決勝は公式の開催都市。
+const VENUE_KO={
+  89:{d:"7/4"},90:{d:"7/4"},91:{d:"7/5"},92:{d:"7/5"},93:{d:"7/6"},94:{d:"7/6"},95:{d:"7/7"},96:{d:"7/7"},
+  97:{d:"7/9",city:"フォックスボロ"},98:{d:"7/10",city:"イングルウッド"},99:{d:"7/10",city:"カンザスシティ"},100:{d:"7/11",city:"マイアミ"},
+  101:{d:"7/14",city:"アーリントン"},102:{d:"7/15",city:"アトランタ"},
+  104:{d:"7/19",city:"イーストラザフォード"}};
+// FIFAランキング(2026/4/1) ＝ 各国の世界順位。本ゲームのティア配分の根拠。
+const FIFA_RANK={"フランス":1,"スペイン":2,"アルゼンチン":3,"イングランド":4,"ポルトガル":5,"ブラジル":6,"オランダ":7,"モロッコ":8,"ベルギー":9,"ドイツ":10,"クロアチア":11,"コロンビア":13,"セネガル":14,"メキシコ":15,"アメリカ":16,"ウルグアイ":17,"日本":18,"スイス":19,"イラン":21,"トルコ":22,"エクアドル":23,"オーストリア":24,"韓国":25,"オーストラリア":27,"アルジェリア":28,"エジプト":29,"カナダ":30,"ノルウェー":31,"パナマ":33,"コートジボワール":34,"スウェーデン":38,"パラグアイ":40,"チェコ":41,"スコットランド":43,"チュニジア":44,"コンゴ民主共和国":46,"ウズベキスタン":50,"カタール":55,"イラク":57,"南アフリカ":60,"サウジアラビア":61,"ヨルダン":63,"ボスニア・ヘルツェゴビナ":65,"カーボベルデ":69,"ガーナ":74,"キュラソー":82,"ハイチ":83,"ニュージーランド":85};
+// 監督国籍など、出場48カ国以外も含む 国名(日本語)→ISO の補助マップ。
+const NAT_ISO={"イタリア":"it","セルビア":"rs","ロシア":"ru","デンマーク":"dk","ウェールズ":"gb-wls","北アイルランド":"gb-nir","アイルランド":"ie","ナイジェリア":"ng","ポーランド":"pl","ウクライナ":"ua","ギリシャ":"gr","スロバキア":"sk","ハンガリー":"hu","ルーマニア":"ro","アイスランド":"is","フィンランド":"fi","スロベニア":"si","ベネズエラ":"ve","チリ":"cl","ペルー":"pe","コスタリカ":"cr","ホンジュラス":"hn","カメルーン":"cm","マリ":"ml","ブルガリア":"bg","北マケドニア":"mk","モンテネグロ":"me","アルバニア":"al","ジョージア":"ge","イスラエル":"il","中国":"cn"};
+const flagImg=(code,alt='')=>code?`<img class="flag" src="https://flagcdn.com/${code}.svg" width="22" height="16" alt="${esc(alt)}" loading="lazy" onerror="this.style.display='none'">`:'';
+const ccflag=cc=>flagImg(cc);
+const natFlag=name=>{const c=ISO[name]||NAT_ISO[name]||null;return flagImg(c,name);};
+// 想定スタメン（実名XI）をフォーメーション図に。formation の数列でラインを構成し、pos順(DF→MF→FW)に配置。
+function xiPitch(formation,xi){
+  if(!xi||!xi.length)return '';
+  const lines=String(formation||'').split('-').map(Number).filter(x=>x>0);
+  const gk=xi.find(p=>p.pos==='GK')||xi[0];
+  const rank={DF:0,MF:1,FW:2};
+  const out=xi.filter(p=>p!==gk).sort((a,b)=>(rank[a.pos]??1)-(rank[b.pos]??1));
+  let bands=[[gk]];
+  if(lines.length){let i=0;lines.forEach(c=>{bands.push(out.slice(i,i+c));i+=c;});if(i<out.length)bands[bands.length-1]=bands[bands.length-1].concat(out.slice(i));}
+  else {bands.push(out.filter(p=>p.pos==='DF'),out.filter(p=>p.pos==='MF'),out.filter(p=>p.pos==='FW'));}
+  bands=bands.filter(b=>b.length);
+  const n=bands.length;let dots='';
+  // 縦・ハーフコート（GK=下 → FW=上）。各ライン内は横に均等配置。
+  bands.forEach((band,bi)=>{const y=n>1?88-bi*(76/(n-1)):50;
+    band.forEach((p,j)=>{const x=8+(j+1)/(band.length+1)*84;
+      const col=p.pos==='GK'?'var(--lime)':p.pos==='DF'?'var(--c6)':p.pos==='MF'?'var(--c4)':'var(--c1)';
+      const sur=esc(String(p.name||'').split(' ').pop());
+      dots+=`<span class="pp" style="left:${x}%;top:${y}%"><span class="dot" style="background:${col}"></span><span class="nm" title="${esc(p.name||'')}">${sur}</span></span>`;});
+  });
+  return `<div class="pitch half"><span class="hpline"></span><span class="hpcirc"></span><span class="hpbox"></span>${dots}</div>`;
+}
+let G=JSON.parse(document.getElementById('gamedata').textContent);
+if(!G.colors)G.colors={};
+let rlState={order:[],remaining:null,spinning:false,timer:null};
+
+const tier=n=>G.teams[n]?.tier||"";
+const owner=n=>G.teams[n]?.owner||null;
+// 国名(日本語)→ISO 3166-1 alpha-2（flagcdn 用）。スコットランド/イングランドはサブディビジョンコード。
+const ISO={"メキシコ":"mx","南アフリカ":"za","韓国":"kr","チェコ":"cz","カナダ":"ca","ボスニア・ヘルツェゴビナ":"ba","カタール":"qa","スイス":"ch","ブラジル":"br","モロッコ":"ma","ハイチ":"ht","スコットランド":"gb-sct","アメリカ":"us","パラグアイ":"py","オーストラリア":"au","トルコ":"tr","ドイツ":"de","キュラソー":"cw","コートジボワール":"ci","エクアドル":"ec","オランダ":"nl","日本":"jp","スウェーデン":"se","チュニジア":"tn","ベルギー":"be","エジプト":"eg","イラン":"ir","ニュージーランド":"nz","スペイン":"es","カーボベルデ":"cv","サウジアラビア":"sa","ウルグアイ":"uy","フランス":"fr","セネガル":"sn","イラク":"iq","ノルウェー":"no","アルゼンチン":"ar","アルジェリア":"dz","オーストリア":"at","ヨルダン":"jo","ポルトガル":"pt","コンゴ民主共和国":"cd","ウズベキスタン":"uz","コロンビア":"co","イングランド":"gb-eng","クロアチア":"hr","ガーナ":"gh","パナマ":"pa"};
+// 国旗は flagcdn の SVG 画像で描画（絵文字は Windows でグリフが無く文字化けするため）。
+const flag=n=>{const c=ISO[n];if(!c)return"";const e=G.teams[n]?.flag||"";return `<img class="flag" src="https://flagcdn.com/${c}.svg" width="22" height="16" alt="${esc(e)}" loading="lazy" onerror="this.style.display='none'">`;};
+const pcol=p=>G.colors[p]||"#a78bfa";
+const isLow=t=>t==="C"||t==="D";
+const isHigh=t=>t==="A"||t==="B";
+const groupsOf=()=>{const g={};for(const[n,t]of Object.entries(G.teams))(g[t.group]=g[t.group]||[]).push(n);return g;};
+const fmt=n=>Number.isInteger(n)?n:n.toFixed(1);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function dstr(d){const[y,m,da]=d.split('-').map(Number);const wd=WD[new Date(y,m-1,da).getDay()];return `${m}/${da}(${wd})`;}
+
+function tchip(n){const t=tier(n);return t?`<span class="tchip t${t}">${t}</span>`:`<span class="tchip tX">－</span>`;}
+
+function renderRules(){
+  const mem=[['Mine','スペイン・ドイツ・日本・コロンビア'],['Naga','イングランド・オランダ・メキシコ・エクアドル'],['Tori','フランス・ポルトガル・モロッコ・ウルグアイ'],['Oga','ブラジル・アルゼンチン・ノルウェー・スイス']]
+    .map(([p,c])=>`<div class="rl-mem-row"><span class="rl-mdot" style="background:${pcol(p)}"></span><b>${esc(p)}</b><span class="rl-mteams">${esc(c)}</span></div>`).join('');
+  document.getElementById('v-rules').innerHTML=`
+  <div class="barh">🏆 4カ国 順位予想ゲーム <span class="en">RULES</span></div>
+  <div class="card">
+    <p class="hint">参加メンバーが選んだ<b>4カ国</b>の最終成績に応じたポイントを合計し、<b>一番「点数が低い（少ない）」人の優勝</b>！ 早期敗退でも最後まで逆転のチャンスあり。</p>
+    <div class="rl-mems">${mem}</div>
+  </div>
+
+  <div class="barh">点数表 <span class="en">SCORING</span></div>
+  <div class="card">
+    <p class="hint">勝ち上がるほど低い点数。最後（優勝）が最小の1点。</p>
+    <table><thead><tr><th class="l">最終成績</th><th>点数</th></tr></thead><tbody>
+      <tr><td class="l">優勝</td><td class="gold-text" style="font-family:Anton;font-size:20px">1</td></tr>
+      <tr><td class="l">準優勝</td><td><b>2</b></td></tr>
+      <tr><td class="l">3位</td><td><b>3</b></td></tr>
+      <tr><td class="l">4位</td><td><b>4</b></td></tr>
+      <tr><td class="l">ベスト8 敗退</td><td><b>8</b></td></tr>
+      <tr><td class="l">ベスト16 敗退</td><td><b>12</b></td></tr>
+      <tr><td class="l">ベスト32 敗退</td><td><b>16</b></td></tr>
+      <tr><td class="l">グループ敗退</td><td><b>20</b></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="barh">特別ボーナス（マイナス点）<span class="en">BONUS</span></div>
+  <div class="card">
+    <p class="hint">ベスト4が出揃ったら<b>優勝国・準優勝国を予想</b>。的中すると合計点からマイナス！</p>
+    <table><tbody>
+      <tr><td class="l">✨ 優勝国を的中</td><td class="gold-text"><b>−5</b></td></tr>
+      <tr><td class="l">✨ 準優勝国を的中</td><td class="gold-text"><b>−3</b></td></tr>
+    </tbody></table>
+    <p class="hint" style="margin-top:8px">※ 両方当てたら合計 <b>−8点</b>！ 予想は「設定」タブで入力します。</p>
+  </div>
+
+  <div class="barh">同点になった場合 <span class="en">TIE-BREAK</span></div>
+  <div class="card">
+    <p class="hint">合計ポイントが同じなら、<b>「一番上まで勝ち上がったチーム」を持っている人</b>の勝ち。<br>
+    （例：最高成績がベスト4の人 ＞ ベスト8の人）<br>
+    ※ 一番勝ち上がったチームの成績も同じなら、2番目に成績が良かったチームで比較します。</p>
+  </div>
+
+  <div class="note">合計点が少ないほど上位。暫定順位では「現在地で敗退した場合の最悪値」を表示し、勝ち上がると点数が下がります（＝順位が上がります）。</div>`;
+}
+
+// 戦力偏差値（無ければFIFAランクで代替）。グループ予測・KO勝ち上がり予測の基準。
+function tbDev(n){const s=G.strength&&G.strength.teams&&G.strength.teams[n];return (s&&s.dev)||(100-(FIFA_RANK[n]||90));}
+// 各グループの最終順位を予測（消化済みは実結果、未消化は偏差値で勝敗を補完）＋3位枠の割当。
+function tbProject(){
+  const groups={};
+  'ABCDEFGHIJKL'.split('').forEach(g=>{
+    const ms=G.gsMatches.filter(m=>m.group===g);
+    const t={};const add=n=>{t[n]=t[n]||{team:n,pts:0,gd:0,gf:0};return t[n];};
+    let complete=true;
+    ms.forEach(m=>{const H=add(m.home),A=add(m.away);let hs=m.hs,as=m.as;
+      if(hs==null||as==null){complete=false;const d=tbDev(m.home)-tbDev(m.away);
+        if(Math.abs(d)<3){hs=1;as=1;}else{const mg=Math.min(3,1+Math.floor(Math.abs(d)/4));if(d>0){hs=mg;as=0;}else{hs=0;as=mg;}}}
+      H.gf+=hs;A.gf+=as;H.gd+=hs-as;A.gd+=as-hs;
+      if(hs>as)H.pts+=3;else if(as>hs)A.pts+=3;else{H.pts++;A.pts++;}});
+    groups[g]={rows:Object.values(t).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf),complete};
+  });
+  // 3位の上位8グループが突破 → R32の「3:◯/◯…」枠へ割当（許容組の集合に対し完全マッチング）
+  const thirds=Object.keys(groups).map(g=>Object.assign({g},groups[g].rows[2])).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
+  const Q=thirds.slice(0,8).map(x=>x.g);
+  const done=Object.values(groups).every(x=>x.complete);
+  const slots=[];R32.forEach(m=>['a','b'].forEach(k=>{if(m[k][0]==='3')slots.push({key:m.no+k,allowed:m[k].slice(2).split('/')});}));
+  const assign={};
+  // GS確定後は公式の割り当て表（KO_THIRD）を使用。未確定時のみ偏差値予測用に許容集合で総当たり割り当て。
+  const officialOk=done&&slots.every(s=>{const g=KO_THIRD[parseInt(s.key,10)];return g&&Q.includes(g)&&s.allowed.includes(g);});
+  if(officialOk){slots.forEach(s=>{assign[s.key]=KO_THIRD[parseInt(s.key,10)];});}
+  else{(function bt(i,used){if(i===slots.length)return true;for(const g of slots[i].allowed){if(Q.includes(g)&&!used[g]){used[g]=1;assign[slots[i].key]=g;if(bt(i+1,used))return true;used[g]=0;delete assign[slots[i].key];}}return false;})(0,{});}
+  return {groups,Q,assign,done};
+}
+function renderBracket(){
+  const P=tbProject();
+  // 試合ツリー構築
+  const byNo={};
+  R32.forEach(m=>byNo[m.no]={no:m.no,round:'R32',a:m.a,b:m.b,city:m.city,d:m.d,t:m.t});
+  const rk=['R16','QF','SF','F'];
+  FLOW.forEach((r,ri)=>r.ms.forEach(x=>byNo[x[0]]={no:x[0],round:rk[ri],c1:x[1],c2:x[2]}));
+  // R32スロット → 想定国
+  const posJa={'1':'1位','2':'2位','3':'3位'};
+  const slotInfo=(slot,no,k)=>{
+    if(slot[0]==='3'){const g=P.assign[no+k];const r=g&&P.groups[g].rows[2];
+      return {team:r&&r.team,tag:'3位',label:'3位通過',status:P.done?'done':'proj'};}
+    const g=slot[1],r=P.groups[g]&&P.groups[g].rows[slot[0]==='1'?0:1];
+    return {team:r&&r.team,tag:g+(slot[0]==='1'?'①':'②'),label:`${g}組${posJa[slot[0]]}`,status:P.groups[g]&&P.groups[g].complete?'done':'proj'};
+  };
+  // 実際のKO結果（koMatches）を対戦カードで照合
+  const koLookup=(round,ta,tb)=>{if(!ta||!tb||!G.koMatches)return null;
+    for(const m of G.koMatches){if(m.round!==round)continue;
+      if((m.home===ta&&m.away===tb)||(m.home===tb&&m.away===ta))return m;}return null;};
+  // 勝ち上がり：実結果(koMatches)があれば優先、無ければ偏差値で予測。memo化。
+  const memo={};
+  const pickWin=(a,b)=>!a.team?b:!b.team?a:tbDev(a.team)>=tbDev(b.team)?a:b;
+  function nodeInfo(no){if(memo[no])return memo[no];const m=byNo[no];let ents;
+    if(m.round==='R32')ents=[slotInfo(m.a,no,'a'),slotInfo(m.b,no,'b')];
+    else ents=[nodeInfo(m.c1).winner,nodeInfo(m.c2).winner];
+    const ko=koLookup(m.round,ents[0].team,ents[1].team);
+    let winner,actual=false;
+    if(ko&&ko.winner){winner={team:ko.winner,status:'actual'};actual=true;}
+    else{const w=pickWin(ents[0],ents[1]);winner={team:w.team,status:'pred'};}
+    return memo[no]={entrants:ents,winner,actual};}
+  // 幾何配置
+  const order=[];(function leaves(no){const m=byNo[no];if(m.round==='R32'){order.push(no);return;}leaves(m.c1);leaves(m.c2);})(104);
+  const idx={};order.forEach((no,i)=>idx[no]=i);
+  const ROW=96,H0=48,BW=178,GAP=44,PITCH=BW+GAP;
+  const col={R32:0,R16:1,QF:2,SF:3,F:4};
+  const colX=c=>c*PITCH;
+  const cyMemo={};
+  function cy(no){if(cyMemo[no]!=null)return cyMemo[no];const m=byNo[no];
+    return cyMemo[no]=m.round==='R32'?H0+idx[no]*ROW+ROW/2:(cy(m.c1)+cy(m.c2))/2;}
+  const W=colX(4)+BW+12,Hc=H0+16*ROW+22;
+  // 接続線（各親→2子）
+  let links='';
+  Object.values(byNo).forEach(m=>{if(m.round==='R32')return;const px=colX(col[m.round]),py=cy(m.no);
+    [m.c1,m.c2].forEach(cn=>{const cc=byNo[cn],cx=colX(col[cc.round])+BW,ccy=cy(cn),mx=(cx+px)/2;
+      links+=`<polyline points="${cx},${ccy} ${mx},${ccy} ${mx},${py} ${px},${py}" fill="none" stroke="var(--line)" stroke-width="1.4"/>`;});});
+  // 会場
+  const venue=m=>{const v=m.round==='R32'?{city:m.city,d:m.d,t:m.t}:VENUE_KO[m.no];if(!v)return '';
+    const stad=v.city?(STAD[v.city]||''):'';
+    const dt=v.t?`<b>${v.d} ${v.t}</b><span class="tb-jst">JST</span>`:`<b>${v.d||'日程調整中'}</b><span class="tb-loc">現地</span>`;
+    return `<div class="tb-meta"><span class="tb-d">${dt}<i>#${m.no}</i></span>${v.city?`<span class="tb-v">${esc(v.city)}${stad?'・'+esc(stad):''}</span>`:'<span class="tb-v dim">会場調整中</span>'}</div>`;};
+  // ボックス描画
+  const slotRow=(info,isAdv,advAct)=>{
+    const t=info.team,act=info.status==='actual';
+    const cls=isAdv?(advAct?'adv act':'adv'):(info.status==='proj'||info.status==='pred')?'muted':(act?'act':'');
+    const bdg=info.status==='proj'?'<span class="tb-bdg proj">想定</span>':'';
+    const arrow=isAdv?(advAct?'<span class="tb-av act">✔</span>':'<span class="tb-av">▶</span>'):'';
+    return `<div class="tb-slot ${cls} ${t?'':'tbd'}">${info.tag?`<span class="tb-tag">${esc(info.tag)}</span>`:''}${t?flag(t):''}<span class="tb-nm">${t?esc(t):(info.label||'未定')}</span>${arrow}${bdg}</div>`;};
+  let boxes='';
+  Object.values(byNo).forEach(m=>{const ni=nodeInfo(m.no),x=colX(col[m.round]);
+    const bh=88,top=cy(m.no)-bh/2,advT=ni.winner.team,advAct=ni.winner.status==='actual';
+    boxes+=`<div class="tb-box ${ni.actual?'act':(m.round==='F'?'win':'')}" style="left:${x}px;top:${top}px;width:${BW}px">
+      ${slotRow(ni.entrants[0],ni.entrants[0].team&&ni.entrants[0].team===advT,advAct)}
+      ${slotRow(ni.entrants[1],ni.entrants[1].team&&ni.entrants[1].team===advT,advAct)}
+      ${venue(m)}</div>`;});
+  // ヘッダ
+  const cols=[['ラウンド32','ROUND OF 32'],['ベスト16','ROUND OF 16'],['準々決勝','QUARTER-FINALS'],['準決勝','SEMI-FINALS'],['決勝','FINAL']];
+  const hd=cols.map((c,i)=>`<div class="tb-hd" style="left:${colX(i)}px;width:${BW}px">${c[0]}<em>${c[1]}</em></div>`).join('');
+  const champNode=nodeInfo(104),champ=champNode.winner.team,champAct=champNode.winner.status==='actual';
+  const doneCount=Object.values(P.groups).filter(g=>g.complete).length;
+  const koDone=(G.koMatches||[]).filter(m=>m.winner).length;
+  document.getElementById('v-bracket').innerHTML=`
+    <div class="barh">決勝トーナメント表 <span class="en">KNOCKOUT BRACKET</span></div>
+    <p class="hint">公式フォーマット（各組1位×3位、2位×2位）。GS通過国は<b>確定</b>。ノックアウトは<b>実際の試合結果</b>が入れば反映し、未消化分は戦力偏差値で<b>予測</b>します。${koDone?`決勝T <b>${koDone}試合</b>が確定済み。`:'<b>R32は現地6/28開幕</b>——結果が入り次第ここに反映されます。'}</p>
+    <div class="tb-legend">
+      <span class="tb-key"><span class="tb-dotk" style="background:#9fe0b0"></span>✔ 実結果（勝ち上がり確定）</span>
+      <span class="tb-key"><span class="tb-dotk" style="background:var(--gold)"></span>▶ 勝ち上がり予測</span>
+      <span class="tb-key"><span class="tb-dotk" style="background:#a78bfa"></span>想定（GS予測の枠）</span>
+    </div>
+    ${champ?`<div class="tb-champ${champAct?' act':''}"><span class="flag-wrap">${flag(champ)}</span><div><div class="ttl">${champAct?'🏆 優勝 CHAMPION':'予想優勝 🏆 PREDICTED'}</div><div class="nm">${esc(champ)}</div></div></div>`:''}
+    <div class="tb-scrollhint">← 横スクロールで決勝まで（各試合に日付・会場を表示）→</div>
+    <div class="tb-wrap"><div class="tb-canvas" style="width:${W}px;height:${Hc}px">
+      <svg class="tb-links" width="${W}" height="${Hc}">${links}</svg>
+      ${hd}${boxes}
+    </div></div>
+    <div class="note">R32の日付・時刻は<b>日本時間（JST）</b>。ベスト16以降は現地日付（ベスト16=7/4〜7、準々=7/9〜11、準決=7/14・15、決勝=7/19、いずれも現地。時刻は確定後に反映）。会場は公式日程に準拠。勝ち上がりは実結果が入れば反映、未消化分は戦力偏差値で予測します。</div>`;
+}
+
+// 決勝トーナメント日程（日程タブ）。R32は確定通過国を表示（未確定枠は「想定」）。
+function koScheduleHTML(){
+  const P=tbProject();
+  const slot=(s,no,k)=>{
+    if(s[0]==='3'){const g=P.assign[no+k],r=g&&P.groups[g].rows[2];return {t:r&&r.team,lab:'3位',proj:!P.done};}
+    const g=s[1],r=P.groups[g]&&P.groups[g].rows[s[0]==='1'?0:1];
+    return {t:r&&r.team,lab:`${g}組${s[0]==='1'?'1位':'2位'}`,proj:!(P.groups[g]&&P.groups[g].complete)};};
+  const side=(s,no,k)=>{const x=slot(s,no,k);return x.t?`${flag(x.t)} ${esc(x.t)}${x.proj?'<span class="ko-proj">想定</span>':''}`:`<span class="bk-tbd">${x.lab}</span>`;};
+  const byDate={};R32.forEach(m=>{(byDate[m.d]=byDate[m.d]||[]).push(m);});
+  let rows='';
+  Object.keys(byDate).forEach(d=>{rows+=`<div class="day">${d}（日本時間）</div>`;
+    byDate[d].forEach(m=>{const stad=STAD[m.city]||'';
+      rows+=`<div class="ko-m"><span class="ko-no"><b>${m.t}</b><br>#${m.no}</span><span class="ko-tm">${side(m.a,m.no,'a')}<i>vs</i>${side(m.b,m.no,'b')}</span><span class="ko-ven">${esc(m.city)}${stad?'<br><em>'+esc(stad)+'</em>':''}</span></div>`;});});
+  const later=[['ベスト16','7/4〜7/7'],['準々決勝','7/9〜7/11'],['準決勝','7/14・7/15'],['決勝','7/19・メットライフ']];
+  const lat=later.map(x=>`<div class="ko-round"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
+  return `<div class="barh" style="margin-top:18px">決勝トーナメント 日程 <span class="en">KNOCKOUT SCHEDULE</span></div>
+    <p class="hint">ラウンド32の<b>日本時間（JST）キックオフ</b>。グループ確定済みの通過国を表示（未確定枠は<span class="ko-proj">想定</span>）。組合せ・勝ち上がり予想は「決勝T表」タブ。</p>
+    ${rows}
+    <div class="ko-rounds">${lat}</div>
+    <div class="hint" style="margin-top:8px">ベスト16以降は現地日付。日本時間は概ね翌日になります（時刻は確定後に反映）。</div>`;
+}
+function renderRank(){
+  const arr=Object.keys(G.teams).map(n=>({n,r:FIFA_RANK[n]??999})).sort((a,b)=>a.r-b.r);
+  const rows=arr.map(x=>{const o=owner(x.n);
+    return `<tr><td class="rk">${x.r<999?x.r:'－'}</td>
+      <td class="l">${flag(x.n)} ${esc(x.n)}</td>
+      <td>${tchip(x.n)}</td>
+      <td>${esc(G.teams[x.n].group)}</td>
+      <td class="l">${o?`<span class="ochip" style="background:${pcol(o)}">${esc(o)}</span>`:'<span class="bk-tbd">―</span>'}</td></tr>`;}).join('');
+  document.getElementById('v-rank').innerHTML=`
+    <div class="barh">FIFAランキング <span class="en">FIFA RANKING · 2026/4</span></div>
+    <p class="hint">2026年4月1日付のFIFA世界ランキング（出場48カ国）。この順位を基準に、上位からティア A/B/C/D に振り分けてドラフトします。最下位3カ国（<span class="tchip tX">－</span>）はドラフト対象外。</p>
+    <div class="card" style="padding:8px 10px"><div class="tbw"><table>
+      <thead><tr><th>世界順位</th><th class="l">国</th><th>ティア</th><th>組</th><th class="l">保有者</th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div>
+    <div class="note">出場国のみ抜粋のため世界順位は飛び番です（例: 12位イタリア・20位デンマーク等は本大会不参加）。</div>`;
+}
+
+let pfPlayer=null;
+function setPf(p){pfPlayer=p;renderPortfolio();}
+// 本予想における国別ポイント（保有者に入る分＝GS＋1位ボーナス＋決勝T突破、ジャイキリ×2込み。lucky/betは選手単位なので除外）
+function teamPoints(n){const r=teamResult(n);return {pts:r.pts,label:r.label,done:r.done,reach:r.reach,total:r.pts};}
+// 直近（次戦 or 最後の試合）のGSカード
+function nextMatch(n){
+  const ms=G.gsMatches.filter(m=>m.home===n||m.away===n).map(m=>({
+    ...m,t:new Date(`${m.date}T${m.time}:00+09:00`).getTime(),
+    opp:m.home===n?m.away:m.home,isHome:m.home===n,played:m.hs!=null&&m.as!=null
+  })).sort((a,b)=>a.t-b.t);
+  if(!ms.length)return null;
+  const now=Date.now();
+  return ms.find(x=>x.t>=now)||ms[ms.length-1];
+}
+function recentHTML(n){
+  const arr=(G.recent&&G.recent[n])||[];
+  if(!arr.length)return '<div class="hint" style="margin:4px 2px">直近の試合データは準備中です。</div>';
+  return '<div class="rec">'+arr.slice(0,5).map(m=>{
+    const rc=m.res==='W'?'rw':m.res==='L'?'rl':'rd';
+    const d=(m.date||'').slice(5).replace('-','/');
+    return `<div class="recm"><span class="rcb ${rc}">${esc(m.res||'')}</span><span class="rco">vs ${esc(m.opp||'')}</span><span class="rcs">${m.gf}-${m.ga}</span><span class="rcd">${d}${m.home===false?' (A)':''}</span></div>`;
+  }).join('')+'</div>';
+}
+function teamDetailHTML(n){
+  const pr=(G.profiles&&G.profiles[n])||null;
+  const sq=(G.squads&&G.squads[n])||null;
+  let html='';
+  if(pr){
+    html+=`<div class="td-top">
+      <div class="td-pitch">${xiPitch(pr.formation,pr.xi)}<div class="td-form">${esc(pr.formation||'')}</div><div class="td-sub2">想定スタメン｜${pr.xiSrc==='guardian'?'The Guardian':'予想'}</div></div>
+      <div class="td-info">
+        ${pr.manager?`<div class="td-mgr"><span class="td-lbl">監督</span>${natFlag(pr.manager.nat)} <b>${esc(pr.manager.name)}</b>${pr.manager.nat?`<span class="td-nat">${esc(pr.manager.nat)}</span>`:''}</div>`:''}
+        <div class="td-tac">${esc(pr.tactic||'')}</div>
+        <div class="td-src">${pr.src==='guardian'?'戦術: The Guardian 分析を参照':'戦術: 一般情報より'}</div>
+      </div></div>`;
+  }
+  html+=`<div class="td-h">直近の試合</div>${recentHTML(n)}`;
+  if(sq&&sq.length){
+    const POSJ={GK:'GK',DF:'DF',MF:'MF',FW:'FW'};const byPos={GK:[],DF:[],MF:[],FW:[]};
+    sq.forEach(p=>{(byPos[p.pos]?byPos[p.pos]:(byPos.OTHER=byPos.OTHER||[])).push(p);});
+    let body='';
+    ['GK','DF','MF','FW','OTHER'].forEach(pos=>{const arr=byPos[pos];if(!arr||!arr.length)return;
+      arr.sort((a,b)=>(a.no||99)-(b.no||99)).forEach(p=>{
+        body+=`<tr><td class="sqn">${p.no??'–'}</td><td class="l">${esc(p.name)}</td><td>${esc(POSJ[p.pos]||p.pos||'')}</td><td>${p.age??'–'}</td><td class="l">${ccflag(p.cc)} ${esc(p.club||'')}</td></tr>`;});});
+    html+=`<div class="td-h">招集選手（全${sq.length}名）</div><table class="sqt"><thead><tr><th>#</th><th class="l">選手</th><th>位置</th><th>年齢</th><th class="l">所属クラブ</th></tr></thead><tbody>${body}</tbody></table>`;
+  } else { html+='<div class="hint" style="margin:6px 2px">招集選手データは準備中です。</div>'; }
+  return html;
+}
+function togSquad(n){
+  const el=document.getElementById('sq-'+n),cz=document.getElementById('cz-'+n);
+  if(!el)return;
+  if(el.style.display!=='none'){el.style.display='none';if(cz)cz.textContent='▾';return;}
+  if(!el.dataset.loaded){el.innerHTML=teamDetailHTML(n);el.dataset.loaded='1';}
+  el.style.display='block';if(cz)cz.textContent='▴';
+}
+function renderPortfolio(){
+  const {P}=compute();
+  const isRank=pfPlayer==='__rank__';
+  const sel=isRank?'__rank__':((pfPlayer&&G.players.includes(pfPlayer))?pfPlayer:G.players[0]);
+  const memberOpts=G.players.map(p=>`<option value="${esc(p)}" ${(!isRank&&p===sel)?'selected':''}>${esc(p)}</option>`).join('');
+  const rankOpt=`<option value="__rank__" ${isRank?'selected':''}>★ FIFAランク順（全チーム）</option>`;
+  const listTeams=isRank
+    ? Object.keys(G.teams).sort((a,b)=>(FIFA_RANK[a]??999)-(FIFA_RANK[b]??999))
+    : (P[sel]?P[sel].teams.map(t=>t.team):[]);
+  const rowFor=n=>{
+    const r=teamResult(n);const nm=nextMatch(n);const o=owner(n);
+    const nmHtml=nm
+      ? `<div class="pf-next">${nm.played?'直近結果':'次戦'}: ${flag(nm.opp)} ${esc(nm.opp)}<span class="pf-when">${dstr(nm.date)} ${nm.time}${nm.played?` ／ ${nm.isHome?nm.hs:nm.as}-${nm.isHome?nm.as:nm.hs}`:''}</span></div>`
+      : '<div class="pf-next" style="color:var(--muted)">日程データなし</div>';
+    const meta=isRank?`<span class="bk-slot">${FIFA_RANK[n]?'世界'+FIFA_RANK[n]+'位':'圏外'}</span>${o?`<span class="ochip" style="background:${pcol(o)}">${esc(o)}</span>`:''}`:'';
+    return `<div class="pf-item">
+      <button class="pf-row" onclick="togSquad('${esc(n)}')">
+        ${flag(n)}<span class="pf-nm">${esc(n)}</span>${meta}
+        <span class="pf-pts">${fmt(r.pts)}<i>点</i></span><span class="pf-caret" id="cz-${esc(n)}">▾</span>
+      </button>
+      <div class="pf-sub"><span class="pf-stage ${r.done?'done':'prov'}">${esc(r.label)}</span><span class="pf-st2">${r.done?'確定':'暫定'}</span></div>
+      ${nmHtml}
+      <div class="pf-squad" id="sq-${esc(n)}" style="display:none"></div>
+    </div>`;};
+  const cards=listTeams.map(rowFor).join('')||'<div class="hint">保有国がありません。「設定」タブで保有者を割り当ててください。</div>';
+  let head;
+  if(isRank){
+    head=`<div class="pf-summary" style="--pc:#a78bfa"><div class="pf-total">48<i>チーム</i></div>
+      <div class="pf-bd"><b class="gold-text">FIFAランク順・全出場国</b><br>各国の現在の成績点・直近試合・詳細を一覧（2026/4 ランキング順）</div></div>`;
+  }else{
+    const pb=P[sel]||{total:0,teams:[],bonus:0};
+    head=`<div class="pf-summary" style="--pc:${pcol(sel)}"><div class="pf-total">${fmt(pb.total)}<i>点</i></div>
+      <div class="pf-bd"><b style="color:${pcol(sel)}">${esc(sel)}</b>／保有 ${pb.teams.length}カ国<br>${pb.teams.map(t=>esc(t.team)+' '+fmt(t.pts)).join('・')}${pb.bonus?'　<span style="color:var(--lime)">✨'+fmt(pb.bonus)+'</span>':''}</div></div>`;
+  }
+  document.getElementById('v-portfolio').innerHTML=`
+    <div class="barh">ポートフォリオ <span class="en">PORTFOLIO</span></div>
+    <div class="row"><span class="lbl">表示</span>
+      <select id="pf-player" onchange="setPf(this.value)" style="flex:1;min-width:160px;font-weight:700;font-size:15px"><optgroup label="メンバー">${memberOpts}</optgroup><optgroup label="全チーム">${rankOpt}</optgroup></select></div>
+    ${head}
+    <div class="pf-list">${cards}</div>
+    <div class="note">国名をタップ → 想定スタメン（布陣図）・戦術サマリ・招集選手・監督・直近の試合。点数は成績点（少ないほど良い）。<b>暫定</b>は現在地で敗退した場合の最悪値で、勝ち上がると下がります。</div>`;
+}
+
+let rlMode='draft';
+function setRlMode(m){if(rlState.spinning||rlLk.spinning)return;rlMode=m;renderRoulette();}
+function renderRoulette(){
+  const tabs=`<div class="rc-tabs">
+    <button class="${rlMode==='draft'?'on':''}" onclick="setRlMode('draft')">ドラフト順<span class="en">DRAFT ORDER</span></button>
+    <button class="${rlMode==='lucky'?'on':''}" onclick="setRlMode('lucky')">ラッキー国<span class="en">LUCKY NATION</span></button></div>`;
+  if(rlMode==='lucky'){document.getElementById('v-roulette').innerHTML=tabs+renderLuckyRoulette();return;}
+  if(rlState.remaining===null){rlState.order=[];rlState.remaining=[...G.players];}
+  const done=rlState.remaining.length===0;
+  const last=rlState.order[rlState.order.length-1];
+  const pos=rlState.order.length;
+  const nameTxt=done?'🏆 完了':(last?last:'READY');
+  const nameCol=last?pcol(last):'#a78bfa';
+  const ol=rlState.order.map((p,i)=>`<div class="rl-item"><span class="rl-rank">${i+1}</span><span class="rl-dot" style="background:${pcol(p)}"></span><span class="rl-nm">${esc(p)}</span></div>`).join('');
+  const rem=rlState.remaining.map(p=>`<span class="rl-pill" style="border-color:${pcol(p)};color:${pcol(p)}">${esc(p)}</span>`).join('');
+  document.getElementById('v-roulette').innerHTML=tabs+`
+    <div class="barh">ドラフト順ルーレット <span class="en">DRAFT ORDER</span></div>
+    <div class="stripe"></div>
+    <div class="rl-stage"><div class="rl-name" id="rl-name" style="color:${nameCol}">${esc(nameTxt)}</div></div>
+    <div class="rl-btns">
+      <button id="rl-start" class="btn" onclick="rlStart()" ${done?'disabled':''}>${pos===0?'🎲 スタート':(done?'完了':'🎲 次を回す（'+(pos+1)+'人目）')}</button>
+      <button id="rl-stop" class="btn ghost" onclick="rlStop()" disabled>■ ストップ</button>
+      <button id="rl-reset" class="del" onclick="rlReset()">リセット</button>
+    </div>
+    <div class="hint">スタート→ストップで1人ずつ確定（${pos}/${G.players.length}人）。${done?'全員の順番が決定しました！':'残り：'+(rem||'なし')}</div>
+    <div class="barh">確定した順番 <span class="en">RESULT</span></div>
+    <div class="card">${ol||'<div class="hint">まだ確定していません。</div>'}</div>`;
+}
+// 決勝トーナメント進出（生き残り）32カ国＝各組1・2位＋3位上位8
+function tbSurvivors(){const P=tbProject();const s=[];
+  Object.keys(P.groups).sort().forEach(g=>{const r=P.groups[g].rows;if(r[0])s.push(r[0].team);if(r[1])s.push(r[1].team);});
+  P.Q.forEach(g=>{const r=P.groups[g].rows;if(r[2])s.push(r[2].team);});
+  return s;}
+// グループリーグ1位通過の12カ国（ラッキー国の対象）
+function tbWinners(){const P=tbProject();return 'ABCDEFGHIJKL'.split('').map(g=>P.groups[g]&&P.groups[g].rows[0]&&P.groups[g].rows[0].team).filter(Boolean);}
+let rlLk={order:null,picks:{},spinning:false,timer:null};
+function luckyInit(){const c=compute();rlLk.order=[...G.players].sort((a,b)=>(c.P[a].total)-(c.P[b].total));rlLk.picks={};
+  G.players.forEach(p=>{if(G.lucky&&G.lucky[p])rlLk.picks[p]=G.lucky[p];});}
+function luckyEligible(p){const taken=new Set(Object.values(rlLk.picks));return tbWinners().filter(c=>owner(c)!==p&&!taken.has(c));}
+function renderLuckyRoulette(){
+  const gsDone=G.gsMatches.every(m=>m.hs!=null);
+  if(!gsDone)return `<div class="barh">救済ルーレット <span class="en">LUCKY NATION</span></div>
+    <div class="note">グループステージ全72試合が終了してから回せます（対象＝グループリーグ1位通過の12カ国の中から選びます）。現在は未完了です。</div>`;
+  if(rlLk.order===null)luckyInit();
+  const c=compute();
+  const order=rlLk.order,idx=Object.keys(rlLk.picks).length,done=idx>=order.length;
+  const picker=done?null:order[idx];
+  const nm=done?'🏆 完了':(picker||'READY');
+  const col=picker?pcol(picker):'#a78bfa';
+  const rows=order.map((p,i)=>{const lk=rlLk.picks[p];const cur=(!done&&p===picker);
+    return `<div class="rl-item${cur?' cur':''}"><span class="rl-rank">${i+1}</span><span class="rl-dot" style="background:${pcol(p)}"></span><span class="rl-nm">${esc(p)}</span><span class="rl-pts">${fmt(c.P[p].total)}pt</span>${lk?`<span class="rl-lk">${flag(lk)} ${esc(lk)}</span>`:`<span class="rl-lk tbd">${cur?'抽選中…':'—'}</span>`}</div>`;}).join('');
+  const elig=picker?luckyEligible(picker):[];
+  return `<div class="barh">救済ルーレット（ラッキー国）<span class="en">LUCKY NATION</span></div>
+    <p class="hint">グループステージ終了時、<b>暫定下位の人から順に</b>ルーレットを回し、自分が持っていない<b>グループリーグ1位通過の12カ国</b>から1つ「ラッキー国」として獲得。その国の決勝T突破ポイントが自分にも加算されます（元の保有者にも入る“相乗り”方式・チームは奪いません）。下位ほど先に強い国を狙える救済措置。</p>
+    <div class="stripe"></div>
+    <div class="rl-stage"><div class="rl-name" id="lk-name" style="color:${col}">${done?'🏆 完了':(picker?`<span style="font-size:13px;color:var(--muted);display:block">${esc(picker)} の抽選</span>`+'スタート':'READY')}</div></div>
+    <div class="rl-btns">
+      <button id="lk-start" class="btn" onclick="rlLkStart()" ${done?'disabled':''}>${done?'完了':(idx===0?'🎲 スタート':'🎲 次を回す（'+esc(picker)+'）')}</button>
+      <button id="lk-stop" class="btn ghost" onclick="rlLkStop()" disabled>■ ストップ</button>
+      <button id="lk-reset" class="del" onclick="rlLkReset()">リセット</button>
+    </div>
+    <div class="hint">${done?'全員のラッキー国が決定しました！（設定タブでも個別変更できます）':`下位から順に抽選（${idx}/${order.length}人）。次は<b style="color:${col}">${esc(picker)}</b>（候補 ${elig.length}カ国）。`}</div>
+    <div class="barh">抽選順とラッキー国 <span class="en">RESULT</span></div>
+    <div class="card">${rows}</div>`;
+}
+function rlLkStart(){
+  if(rlLk.spinning)return;const order=rlLk.order;const idx=Object.keys(rlLk.picks).length;if(idx>=order.length)return;
+  const picker=order[idx];const elig=luckyEligible(picker);if(!elig.length)return;
+  rlLk.spinning=true;
+  const sb=document.getElementById('lk-start'),tb=document.getElementById('lk-stop'),rb=document.getElementById('lk-reset');
+  if(sb)sb.disabled=true;if(tb)tb.disabled=false;if(rb)rb.disabled=true;
+  const el=document.getElementById('lk-name');let i=Math.floor(Math.random()*elig.length);
+  rlLk.timer=setInterval(()=>{const n=elig[i%elig.length];i++;if(el)el.innerHTML=`${flag(n)} ${esc(n)}`;},75);
+}
+function rlLkStop(){
+  if(!rlLk.spinning)return;clearInterval(rlLk.timer);
+  const tb=document.getElementById('lk-stop');if(tb)tb.disabled=true;
+  const idx=Object.keys(rlLk.picks).length,picker=rlLk.order[idx];
+  const elig=luckyEligible(picker);const winner=elig[Math.floor(Math.random()*elig.length)];
+  const el=document.getElementById('lk-name');let k=0;const steps=16;let delay=70;
+  const seq=()=>{const n=(k>=steps-1)?winner:elig[Math.floor(Math.random()*elig.length)];
+    if(el)el.innerHTML=`${flag(n)} ${esc(n)}`;k++;
+    if(k>=steps){rlLkFinalize(picker,winner);return;}
+    delay*=1.14;setTimeout(seq,delay);};
+  seq();
+}
+function rlLkFinalize(picker,winner){
+  rlLk.picks[picker]=winner;rlLk.spinning=false;
+  G.lucky[picker]=winner;syncData();
+  if(Object.keys(rlLk.picks).length>=rlLk.order.length)refresh();
+  renderRoulette();
+  const el=document.getElementById('lk-name');if(el){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),450);}
+}
+function rlLkReset(){
+  if(rlLk.spinning){clearInterval(rlLk.timer);rlLk.spinning=false;}
+  rlLk={order:null,picks:{},spinning:false,timer:null};
+  G.players.forEach(p=>{if(G.lucky)delete G.lucky[p];});
+  syncData();refresh();renderRoulette();
+}
+function rlStart(){
+  if(rlState.spinning||rlState.remaining.length===0)return;
+  rlState.spinning=true;
+  document.getElementById('rl-start').disabled=true;
+  document.getElementById('rl-stop').disabled=false;
+  document.getElementById('rl-reset').disabled=true;
+  const el=document.getElementById('rl-name');let i=Math.floor(Math.random()*rlState.remaining.length);
+  rlState.timer=setInterval(()=>{const r=rlState.remaining;const n=r[i%r.length];i++;el.textContent=n;el.style.color=pcol(n);},75);
+}
+function rlStop(){
+  if(!rlState.spinning)return;
+  clearInterval(rlState.timer);
+  document.getElementById('rl-stop').disabled=true;
+  const r=rlState.remaining;const winner=r[Math.floor(Math.random()*r.length)];
+  const el=document.getElementById('rl-name');
+  let k=0;const steps=16;let delay=70;
+  const seq=()=>{
+    const n=(k>=steps-1)?winner:r[Math.floor(Math.random()*r.length)];
+    el.textContent=n;el.style.color=pcol(n);k++;
+    if(k>=steps){rlFinalize(winner);return;}
+    delay*=1.14;setTimeout(seq,delay);
+  };
+  seq();
+}
+function rlFinalize(w){
+  rlState.order.push(w);
+  rlState.remaining=rlState.remaining.filter(x=>x!==w);
+  rlState.spinning=false;
+  if(rlState.remaining.length===0){G.draftOrder=[...rlState.order];syncData();}
+  renderRoulette();
+  const el=document.getElementById('rl-name');if(el){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),450);}
+}
+function rlReset(){
+  if(rlState.spinning){clearInterval(rlState.timer);rlState.spinning=false;}
+  rlState.order=[];rlState.remaining=[...G.players];G.draftOrder=null;syncData();renderRoulette();
+}
+
+// 成績→点数（少ないほど良い）。確定=最終結果、未確定=現在地の暫定点（その時点で敗退した場合の最悪値）。
+const PLACE_PTS={champion:1,runnerup:2,third:3,fourth:4,qf:8,r16:12,r32:16,gs:20};
+const REACH={champion:8,runnerup:7,third:6,fourth:5,qf:4,r16:3,r32:2,gs:1};
+function teamResult(t){
+  const ko=G.koMatches||[];const find=r=>ko.find(m=>m.round===r&&(m.home===t||m.away===t));
+  const F=find('F'); if(F&&F.winner)return F.winner===t?{pts:1,reach:8,label:'優勝',done:true}:{pts:2,reach:7,label:'準優勝',done:true};
+  const T=find('3rd'); if(T&&T.winner)return T.winner===t?{pts:3,reach:6,label:'3位',done:true}:{pts:4,reach:5,label:'4位',done:true};
+  const SF=find('SF'); if(SF&&SF.winner&&SF.winner!==t)return {pts:4,reach:5,label:'3位決定戦へ',done:false};
+  if((SF&&SF.winner===t)||(F&&!F.winner&&(F.home===t||F.away===t)))return {pts:2,reach:7,label:'決勝進出',done:false};
+  const QF=find('QF'); if(QF&&QF.winner&&QF.winner!==t)return {pts:8,reach:4,label:'ベスト8敗退',done:true};
+  if(QF&&QF.winner===t)return {pts:4,reach:5,label:'ベスト4進出',done:false};
+  const R16=find('R16'); if(R16&&R16.winner&&R16.winner!==t)return {pts:12,reach:3,label:'ベスト16敗退',done:true};
+  if(R16&&R16.winner===t)return {pts:8,reach:4,label:'ベスト8進出',done:false};
+  const R32=find('R32'); if(R32&&R32.winner&&R32.winner!==t)return {pts:16,reach:2,label:'ベスト32敗退',done:true};
+  if(R32&&R32.winner===t)return {pts:12,reach:3,label:'ベスト16進出',done:false};
+  if(tbSurvivors().includes(t))return {pts:16,reach:2,label:'決勝T進出',done:false};
+  return {pts:20,reach:1,label:'グループ敗退',done:true};
+}
+// 同点比較: 合計が同じなら、勝ち上がりが上のチームを持つ方が上位（reach降順で辞書式比較）。低いtotalが上位。
+function cmpPlayer(a,b){if(a.total!==b.total)return a.total-b.total;
+  for(let i=0;i<Math.max(a.reaches.length,b.reaches.length);i++){const x=a.reaches[i]||0,y=b.reaches[i]||0;if(x!==y)return y-x;}return 0;}
+function compute(){
+  // グループ順位（流用）
+  const gr=groupsOf();const standings={};
+  for(const grp of Object.keys(gr).sort()){
+    const st={};gr[grp].forEach(t=>st[t]={team:t,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0});
+    const ms=G.gsMatches.filter(m=>m.group===grp);let played=0;
+    ms.forEach(m=>{if(m.hs==null||m.as==null)return;played++;const h=st[m.home],a=st[m.away];
+      h.P++;a.P++;h.GF+=m.hs;h.GA+=m.as;a.GF+=m.as;a.GA+=m.hs;
+      if(m.hs===m.as){h.D++;a.D++;h.Pts++;a.Pts++;}
+      else if(m.hs>m.as){h.W++;a.L++;h.Pts+=3;}else{a.W++;h.L++;a.Pts+=3;}});
+    Object.values(st).forEach(s=>s.GD=s.GF-s.GA);
+    const arr=Object.values(st).sort((x,y)=>y.Pts-x.Pts||y.GD-x.GD||y.GF-x.GF);
+    standings[grp]={rows:arr,complete:played===ms.length&&played>0};
+  }
+  const F=(G.koMatches||[]).find(m=>m.round==='F'&&m.winner);
+  const champion=F?F.winner:null, runner=F?(F.home===champion?F.away:F.home):null;
+  const P={};
+  G.players.forEach(p=>{
+    const ts=Object.keys(G.teams).filter(t=>owner(t)===p).map(t=>({team:t,...teamResult(t)}))
+      .sort((x,y)=>y.reach-x.reach||x.pts-y.pts);
+    const base=ts.reduce((s,r)=>s+r.pts,0);
+    const pr=(G.predict||{})[p]||{};let bonus=0;const hit=[];
+    if(champion&&pr.champ===champion){bonus-=5;hit.push('優勝的中 −5');}
+    if(runner&&pr.runnerup===runner){bonus-=3;hit.push('準優勝的中 −3');}
+    P[p]={teams:ts,base,bonus,hit,total:base+bonus,reaches:ts.map(r=>r.reach).sort((a,b)=>b-a),predict:pr};
+  });
+  return {P,standings,champion,runner};
+}
+
+function syncData(){document.getElementById('gamedata').textContent=JSON.stringify(G);}
+function renderAll(){syncData();renderHome();renderLB();renderPortfolio();renderGroups();renderRecap();renderScores();renderBracket();renderRank();renderStrength();renderNews();renderSettings();renderRules();renderData();}
+function togStr(n){const el=document.getElementById('sd-'+n),c=document.getElementById('sc-'+n);if(!el)return;const open=el.style.display!=='none';el.style.display=open?'none':'block';if(c)c.textContent=open?'▾':'▴';}
+function togOwner(p){const el=document.getElementById('od-'+p),c=document.getElementById('oc-'+p);if(!el)return;const open=el.style.display!=='none';el.style.display=open?'none':'block';if(c)c.textContent=open?'▾':'▴';}
+const siBW=d=>Math.max(4,Math.min(100,Math.round((d-25)/50*100))); // 偏差値→バー幅(偏差25→0%,75→100%)
+function strDetail(x){
+  const bar=(lab,v,col)=>`<div class="si-sub"><span class="si-sl">${lab}</span><span class="si-sbar"><i style="width:${siBW(v)}%;background:${col}"></i></span><span class="si-sv">${v}</span></div>`;
+  return `<div class="si-detin">
+    ${bar('実績 (Elo)',x.recDev,'var(--lime)')}
+    ${bar('タレント (市場価値)',x.talDev,'var(--blue)')}
+    ${x.host?'<div class="si-host">＋ 開催国補正あり</div>':''}
+    <div class="si-raw">偏差値 <b>${x.dev}</b>（実績${x.recDev}／タレント${x.talDev}）｜Elo <b>${x.elo}</b>・FIFA <b>${Math.round(x.fifa)}</b>・市場価値 <b>€${x.valueM}m</b>・平均年齢 <b>${x.age}</b>・優勝オッズ <b>${x.odds}</b></div>
+  </div>`;
+}
+function renderStrength(){
+  const S=G.strength||{teams:{},meta:{}};const teams=S.teams||{};const m=S.meta||{};const w=m.weights||{};
+  const arr=Object.keys(teams).map(n=>({n,...teams[n]})).sort((a,b)=>b.dev-a.dev);
+  if(!arr.length){document.getElementById('v-strength').innerHTML='<div class="barh">戦力指数 <span class="en">STRENGTH INDEX</span></div><div class="hm-empty">データ準備中です（strength.json）。</div>';return;}
+  // 保有者別 合計戦力値（保有国の偏差値合計）
+  const tot={},ownedBy={};G.players.forEach(p=>{tot[p]={sum:0,n:0};ownedBy[p]=[];});
+  arr.forEach(x=>{const o=owner(x.n);if(o&&tot[o]){tot[o].sum+=x.dev;tot[o].n++;ownedBy[o].push(x);}});
+  const totArr=G.players.map(p=>({p,sum:tot[p].sum,n:tot[p].n,avg:tot[p].n?tot[p].sum/tot[p].n:0})).sort((a,b)=>b.sum-a.sum);
+  const maxSum=Math.max(1,...totArr.map(t=>t.sum));
+  const owners=totArr.map((t,i)=>{
+    const list=ownedBy[t.p].map(x=>`<div class="so-cty"><span class="so-cf">${flag(x.n)} ${esc(x.n)}</span>${tchip(x.n)}<span class="so-cd">${x.dev}</span></div>`).join('')||'<div class="hint" style="margin:4px 6px">保有国なし</div>';
+    return `<div class="so-item">
+      <div class="so-row click" onclick="togOwner('${esc(t.p)}')" title="保有国の戦力値">
+        <span class="so-rank">${i+1}</span><span class="so-dot" style="background:${pcol(t.p)}"></span><span class="so-nm">${esc(t.p)}</span>
+        <span class="so-bar"><i style="width:${Math.max(4,Math.round(t.sum/maxSum*100))}%;background:${pcol(t.p)}"></i></span>
+        <span class="so-sum">${t.sum}</span><span class="so-avg">平均${t.avg.toFixed(1)}</span><span class="so-caret" id="oc-${esc(t.p)}">▾</span>
+      </div>
+      <div class="so-det" id="od-${esc(t.p)}" style="display:none">${list}</div>
+    </div>`;}).join('');
+  const rows=arr.map((x,i)=>{const o=owner(x.n);const ob=o?`<span class="ochip" style="background:${pcol(o)}">${esc(o)}</span>`:'';
+    return `<div class="si-item">
+      <div class="si-row click" onclick="togStr('${esc(x.n)}')" title="内訳">
+        <span class="si-rank">${i+1}</span>${flag(x.n)}<span class="si-nm">${esc(x.n)}</span>${tchip(x.n)}${ob}
+        <span class="si-barwrap"><i class="si-bar" style="width:${siBW(x.dev)}%"></i></span>
+        <span class="si-score">${x.dev}</span><span class="si-caret" id="sc-${esc(x.n)}">▾</span>
+      </div>
+      <div class="si-det" id="sd-${esc(x.n)}" style="display:none">${strDetail(x)}</div>
+    </div>`;}).join('');
+  document.getElementById('v-strength').innerHTML=`
+    <div class="barh">戦力指数 <span class="en">STRENGTH INDEX</span></div>
+    <div class="note"><b>評価方法</b>　各国の強さを<b>偏差値（平均50・標準偏差10）</b>で<b>客観評価</b>した指標です。次の3要素を各国データから算出します。<br>
+      <b>① 実績</b>＝<b>World Football Elo</b>（対戦相手の強さ・得失点・ホームを織り込んだ“結果ベース”のチーム力）。<br>
+      <b>② タレント</b>＝<b>スカッド市場価値</b>（Transfermarkt、対数化）。市場価値は若手中心チームを過大評価しがちなため、<b>結果ベースのEloと併用して補正</b>（個ではなくチーム力を重視）。<br>
+      <b>③ 開催国補正</b>＝米・加・墨にわずかな加点。<br>
+      重みは恣意性を排すため、<b>ブックメーカーの優勝オッズ（市場の総意）へ回帰でフィット</b>。決定係数 <b>R²≈${m.r2??'-'}</b>、配分は <b>実績${w.rec??'-'}% ／ タレント${w.tal??'-'}% ／ 開催国${w.host??'-'}%</b>（48カ国で安定）。すべて公開・定量データのみで再現可能（<code>scripts/strength.mjs</code>）。<br>
+      <span style="color:var(--muted)">※ 戦力の客観指標であり、組み合わせ・当日のコンディション・大会中の上振れは含みません。国名をタップで内訳。</span></div>
+    <div class="barh" style="margin-top:14px">保有者別 合計戦力値 <span class="en">OWNER TOTAL</span></div>
+    <div class="hint">各メンバーの保有9カ国の戦力偏差値の合計（と平均）。ドラフトの引きの強さの目安。</div>
+    <div class="card">${owners}</div>
+    <div class="barh">国別ランキング <span class="en">BY TEAM</span></div>
+    <div class="si-list">${rows}</div>
+    <div class="note" style="font-size:11.5px">出典：${esc(m.sources||'')}（${esc(S.updated||'')}時点）</div>`;
+}
+function timeAgo(d){const t=Date.parse(d);if(!t)return '';const s=(Date.now()-t)/1000;if(s<60)return 'たった今';if(s<3600)return Math.floor(s/60)+'分前';if(s<86400)return Math.floor(s/3600)+'時間前';const days=Math.floor(s/86400);return days<8?days+'日前':new Date(t).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});}
+function renderNews(){
+  const N=G.news||{items:[]};const items=N.items||[];
+  const upd=N.updated?`<span style="margin-left:auto;font-size:11px;color:var(--muted)">更新 ${timeAgo(N.updated)}</span>`:'';
+  const list=items.length
+    ? items.map(n=>`<a class="nws" href="${esc(n.url||'#')}" target="_blank" rel="noopener noreferrer">
+        <div class="nws-t">${esc(n.title||'')}</div>
+        <div class="nws-m"><span class="nws-src">${esc(n.source||'')}</span>${n.date?`<span class="nws-d">${timeAgo(n.date)}</span>`:''}<span class="nws-go">記事 ↗</span></div></a>`).join('')
+    : '<div class="hm-empty">ニュースは準備中です（自動更新）。</div>';
+  document.getElementById('v-news').innerHTML=
+    `<div class="barh">日本代表 <span class="en">JAPAN ・ NEWS</span></div>`
+    +`<div class="row"><span class="hint" style="margin:0;flex:1">サッカー日本代表の最新ニュースをGoogleニュース横断で自動収集。タップで元記事へ。</span>${upd}</div>`
+    +`<div class="nws-list">${list}</div>`;
+}
+
+// ---- ホーム ----
+function jstDate(off){const d=new Date(Date.now()+9*3600*1000);d.setUTCDate(d.getUTCDate()+(off||0));return d.toISOString().slice(0,10);}
+function mDT(m){return new Date(`${m.date}T${m.time}:00+09:00`).getTime();}
+function ytId(u){if(!u)return'';const s=String(u);const m=s.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);return m?m[1]:(/^[\w-]{11}$/.test(s)?s:'');}
+function openHL(id){const m=document.getElementById('hlmodal');m.querySelector('iframe').src=`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;m.classList.add('on');}
+function closeHL(){const m=document.getElementById('hlmodal');m.classList.remove('on');m.querySelector('iframe').src='about:blank';}
+function scorersHTML(m){
+  const s=m.scorers;if(!s||!s.length)return'';
+  const fmtS=x=>typeof x==='string'?x:`${esc(x.player||'')}${x.minute?` ${x.minute}'`:''}${x.team?`<span style="color:var(--muted)">(${esc(x.team)})</span>`:''}`;
+  return `<div class="hm-sc"><b>⚽ 得点</b>　${s.map(fmtS).join('　')}</div>`;
+}
+function resultCard(m){
+  const hl=(G.highlights&&G.highlights[m.id])||m.highlight||'';const yid=ytId(hl);
+  const thumb=yid?`<button class="hm-hl" onclick="event.stopPropagation();openHL('${yid}')"><img src="https://img.youtube.com/vi/${yid}/hqdefault.jpg" loading="lazy" alt="ハイライト" onerror="this.parentNode.style.display='none'"><span class="hm-play">▶</span><span class="hm-hltxt">ハイライト</span></button>`:'';
+  return `<div class="hm-rm">
+    <div class="hm-rmtop click" onclick="togMatch('${m.id}','h')" title="詳細">
+      <span class="hm-tn">${flag(m.home)} ${esc(m.home)}</span>
+      <span class="hm-score">${m.hs} - ${m.as}</span>
+      <span class="hm-tn aw">${esc(m.away)} ${flag(m.away)}</span>
+      <span class="m-exp" id="mx-h${m.id}">▾</span>
+    </div>
+    ${scorersHTML(m)}${thumb}
+    <div class="mdetail" id="md-h${m.id}" style="display:none"></div>
+  </div>`;
+}
+function fixtureCard(m){
+  return `<div class="hm-fm"><span class="hm-tm">${m.time}</span><span class="gg">${m.group}</span>
+    <span class="hm-tn">${flag(m.home)} ${esc(m.home)}</span><span class="x">vs</span>
+    <span class="hm-tn aw">${esc(m.away)} ${flag(m.away)}</span></div>${oddsRow(m.id)}`;
+}
+function renderHome(){
+  const all=[...G.gsMatches].sort((a,b)=>mDT(a)-mDT(b));
+  const now=Date.now();
+  const next=all.find(m=>mDT(m)>=now&&m.hs==null);
+  const yd=jstDate(-1),td=jstDate(0),tm=jstDate(1);
+  const onDate=d=>all.filter(m=>m.date===d).sort((a,b)=>a.time.localeCompare(b.time));
+  const {P}=compute();
+  const lb=G.players.map(p=>({p,...P[p]})).sort(cmpPlayer);const leader=lb[0]||{p:'—',total:0};
+  const todayN=onDate(td).length;const playedN=all.filter(m=>m.hs!=null).length;const remainN=72-playedN;
+  const bento=`<div class="bento">
+    <div class="bx hero"><div class="bx-k">WORLD CUP 26</div><div class="bx-h">4カ国<br>順位予想</div><div class="bx-lead">首位 <b>${esc(leader.p)}</b> ${fmt(leader.total)}点</div></div>
+    <div class="bx lime"><div class="bx-k">次の試合</div><div class="bx-v">${next?next.time:'—'}</div><div class="bx-s">${next?dstr(next.date)+' '+esc(next.home)+' vs '+esc(next.away):'日程なし'}</div></div>
+    <div class="bx pink"><div class="bx-k">本日の試合</div><div class="bx-v">${todayN}</div><div class="bx-s">${dstr(td)}</div></div>
+    <div class="bx blue"><div class="bx-k">メンバー</div><div class="bx-v">4<span class="u">人</span></div><div class="bx-s">各4カ国</div></div>
+    <div class="bx orange"><div class="bx-k">勝利条件</div><div class="bx-v">最少</div><div class="bx-s">合計点が少ない人の優勝</div></div>
+    <div class="bx dark wide"><div class="bx-k" style="color:var(--violetL)">出場国 / 全試合</div><div class="bx-v">48<span class="u">国</span> · 72<span class="u">試合</span></div><div class="bx-s muted">残り ${remainN} 試合</div></div>
+  </div>`;
+  const sec=(title,en,body)=>`<div class="barh">${title} <span class="en">${en}</span></div>${body}`;
+  const hcard=m=>(m.hs!=null&&m.as!=null)?resultCard(m):fixtureCard(m);
+  const dayBody=(d,empty)=>{const ms=onDate(d);return ms.length?ms.map(hcard).join(''):`<div class="hm-empty">${empty}</div>`;};
+  document.getElementById('v-home').innerHTML=
+    `<div class="barh">ホーム <span class="en">DASHBOARD</span></div>`
+    +bento
+    +sec('前日の試合結果','YESTERDAY',dayBody(yd,`前日（${dstr(yd)}）の試合はありません。`))
+    +sec(`本日（${dstr(td)}）`,'TODAY',dayBody(td,`予定はありません（${dstr(td)}）。`))
+    +sec(`翌日（${dstr(tm)}）`,'TOMORROW',dayBody(tm,`予定はありません（${dstr(tm)}）。`));
+}
+
+function lbDetailHTML(x){
+  const rows=x.teams.map(t=>`<div class="lbd-r"><span class="lbd-team">${flag(t.team)} ${esc(t.team)}</span><span class="lbd-mid">${esc(t.label)}</span><span class="lbd-tag ${t.done?'k':'d'}">${t.done?'確定':'暫定'}</span><span class="lbd-pt">${fmt(t.pts)}</span></div>`).join('');
+  const bonus=x.bonus!==0?`<div class="lbd-r"><span class="lbd-team">✨ ボーナス</span><span class="lbd-mid">${esc(x.hit.join(' / '))}</span><span class="lbd-tag b">的中</span><span class="lbd-pt neg">−${fmt(Math.abs(x.bonus))}</span></div>`:'';
+  const pr=x.predict||{};const pred=(pr.champ||pr.runnerup)?`<div class="lbd-r"><span class="lbd-team">予想</span><span class="lbd-mid">優勝:${esc(pr.champ||'—')} / 準優勝:${esc(pr.runnerup||'—')}</span><span class="lbd-tag"></span><span class="lbd-pt"></span></div>`:'';
+  return `<div class="lb-detail-in">${rows}${bonus}${pred}<div class="lbd-tot">合計 <b>${fmt(x.total)}</b> 点（少ないほど上位）</div></div>`;
+}
+function togLB(p){const el=document.getElementById('lbd-'+p),c=document.getElementById('lbc-'+p);if(!el)return;const open=el.style.display!=='none';el.style.display=open?'none':'block';if(c)c.textContent=open?'▾':'▴';}
+function renderLB(){
+  const {P}=compute();
+  const arr=G.players.map(p=>({p,...P[p]})).sort(cmpPlayer);
+  const maxT=Math.max(...arr.map(x=>x.total)),minT=Math.min(...arr.map(x=>x.total));
+  let rows=arr.map((x,i)=>{
+    const lead=i===0,w=Math.max(8,Math.round((maxT-x.total)/Math.max(1,maxT-minT)*100));
+    return `<div class="lb-item">
+    <div class="pl ${lead?'r1':''} click" style="--pc:${pcol(x.p)}" onclick="togLB('${esc(x.p)}')" title="4カ国の内訳">
+    <div class="ranknum">${i+1}</div>
+    <div class="pmid"><div class="pname">${esc(x.p)}${lead?' <span class="lb-lead">首位</span>':''}</div>
+      <div class="pbar" style="width:${w}%"></div>
+      <div class="bd">${x.teams.map(t=>esc(t.team)+'<b>'+fmt(t.pts)+'</b>').join('・')}${x.bonus?'　<span style="color:var(--lime)">✨'+fmt(x.bonus)+'</span>':''}</div></div>
+    <div class="ptotal" style="color:${lead?'var(--lime)':'var(--tx)'}">${fmt(x.total)}<i>点</i></div>
+    <span class="lb-caret" id="lbc-${esc(x.p)}">▾</span></div>
+    <div class="lb-detail" id="lbd-${esc(x.p)}" style="display:none">${lbDetailHTML(x)}</div>
+  </div>`;}).join('');
+  document.getElementById('v-lb').innerHTML=`
+    <div class="barh">🏆 総合順位 <span class="en">LEADERBOARD</span></div>
+    <div class="hint">合計点が<b>少ない</b>ほど上位（優勝1点〜グループ敗退20点）。各メンバーをタップで保有4カ国の内訳。同点は「勝ち上がりが上のチーム」を持つ人が上位。</div>
+    <div class="lb">${rows}</div>
+    <div class="note">配点: 優勝1 / 準優勝2 / 3位3 / 4位4 / ベスト8敗退8 / ベスト16敗退12 / ベスト32敗退16 / グループ敗退20。✨優勝的中 −5・準優勝的中 −3。<b>暫定</b>は現在地で敗退した場合の最悪値（勝ち上がると下がる）。詳細は「ルール」タブ。保有国の変更は「設定」タブ。</div>`;
+}
+
+function renderGroups(){
+  const {standings}=compute();
+  let html=`<div class="barh">グループ順位 <span class="en">GROUP STAGE</span></div><div class="groups">`;
+  for(const grp of Object.keys(standings)){const s=standings[grp];
+    let rows=s.rows.map((r,i)=>{const o=owner(r.team);
+      return `<tr class="${i<2?'adv':''}"><td class="pos">${i+1}</td>
+        <td class="l">${flag(r.team)} ${esc(r.team)}${tchip(r.team)}${o?`<span class="ochip" style="background:${pcol(o)}">${esc(o)}</span>`:''}</td>
+        <td>${r.P}</td><td>${r.W}-${r.D}-${r.L}</td><td>${r.GD>0?'+':''}${r.GD}</td><td><b>${r.Pts}</b></td></tr>`;}).join('');
+    html+=`<div class="gcard"><div class="gh"><span>Group ${grp}</span><span>${s.complete?'確定':'途中'}</span></div>
+      <div class="tbw"><table><thead><tr><th>#</th><th class="l">国 / 保有者</th><th>試</th><th>勝分敗</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;}
+  html+=`</div><div class="note">上位2をハイライト（実際は各組上位2＋3位上位8チームが決勝T進出）。1位通過＝+2pt。</div>`;
+  document.getElementById('v-groups').innerHTML=html;
+}
+
+// 第1節（各組の最初の2試合＝24試合）の振り返り
+let recapMD=null; // 表示中の節（null=最新の集計済み節）
+function setRecapMD(n){recapMD=n;renderRecap();}
+function mdIds(md){const s=new Set();'ABCDEFGHIJKL'.split('').forEach(g=>{const ms=G.gsMatches.filter(m=>m.group===g).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));ms.slice((md-1)*2,md*2).forEach(m=>s.add(m.id));});return s;}
+// 編集部レビュー（節ごとの文章。実際の試合結果に基づく独自の講評）
+function recapEditorial(md){
+  const ed=(cls,tag,title,body)=>`<div class="rc-ed ${cls}"><div class="rc-edh"><span class="rc-tag ${cls}">${tag}</span><b>${title}</b></div><p>${body}</p></div>`;
+  if(md===3)return [
+    ed('star','スター','レジェンドと新星が刻んだ最終節',`<b>デンベレがノルウェー戦で評価10.0（満点）</b>。フランスは4-1で完勝し首位通過、デンベレは前半だけでハットトリックを達成した。<b>メッシは途中出場から得点</b>しアルゼンチンを3連勝（勝点9）に。ベルギーは<b>デ・ブライネ（評価9.0）とトロサール2発</b>で5発大勝。そして<b>ハリー・ケインがW杯通算11得点でイングランド人最多記録</b>を樹立した。`),
+    ed('jp','日本代表','堂々のグループ2位で決勝トーナメントへ',`<b>日本 1-1 スウェーデン</b>。<b>前田大然</b>のゴールで追いつき、グループF2位で<b>2大会連続の決勝トーナメント進出</b>を確定させた。首位オランダに次ぐ堂々の通過。初戦オランダ撃破未遂のドロー、第2節チュニジア4-0と、攻守に充実した3試合だった。`),
+    ed('up','番狂わせ','歓喜の初突破と、まさかの強豪敗退',`初出場の<b>カーボベルデが歴史的なGS突破</b>！ スペインに次ぐH組2位で、人口約50万の島国が世界を驚かせた。一方<b>ウルグアイはまさかの3位敗退</b>、<b>ドイツもエクアドルに1-2と敗れた</b>（2位通過は死守）。カタール・ウズベキスタン・イラクら大量失点組も姿を消した。`),
+    ed('goal','撃ち合い','最終節も大量点ラッシュ',`<b>セネガル 5-0 イラク</b>（イラクは前半13分に退場者）、<b>ベルギー 5-1 ニュージーランド</b>、<b>フランス 4-1 ノルウェー</b>と強豪が爆発。<b>アルジェリア 3-3 オーストリア</b>はマフレズ2発を含む6ゴールの死闘ドローに終わった。`),
+    ed('draw','突破','32カ国が出そろう——3位突破の8枠',`強豪は順当に勝ち上がり、<b>フランス・アルゼンチンが勝点9で完勝</b>、スペインは無敗の首位通過、イングランドもL組首位。3位ながら勝ち上がった8カ国は<b>コンゴ民主共和国・スウェーデン・エクアドル・ガーナ・ボスニア・アルジェリア・パラグアイ・セネガル</b>。僅差でイラン・韓国・スコットランド・ウルグアイが涙を呑んだ。`),
+    ed('drama','ドラマ','記録と貫禄、そして惜別',`<b>ロナウドのポルトガルはコロンビアと0-0</b>でK組2位通過、両者譲らぬ好ゲーム。<b>ケインのW杯通算11ゴール</b>、デンベレの満点、メッシの復調と、スターが最終節を彩った。3大会ぶり初出場のカーボベルデが躍進する裏で、優勝候補の一角ウルグアイがグループ敗退という明暗も生まれた。`)
+  ].join('');
+  if(md===1)return [
+    ed('up','番狂わせ','王者級を倒した新興・伏兵',`今節最大の衝撃は<b>オーストラリアがトルコを2-0で撃破</b>。デビューの守護神ビーチが<b>評価9.1</b>の再三の好セーブで完封し、優勝候補の一角を沈めた。初出場の<b>カーボベルデはスペインと0-0</b>——GKボジーニャが<b>評価9.7</b>、27本のシュートをほぼ独力で跳ね返す圧巻の守備を見せた。さらに<b>カタールは90分のオウンゴールでスイスと1-1</b>、26本を浴びせながら決めきれなかったスイスを尻目に歴史的な初勝点をもぎ取った。`),
+    ed('jp','日本代表','オランダ相手に2度追いつく執念のドロー',`<b>オランダ 2-2 日本</b>。世界7位の強豪に2度リードを許しながらも食らいついた。守護神<b>鈴木彩艶が評価7.8</b>の再三の好守を見せ、終盤89分に<b>鎌田大地が値千金の同点弾</b>。勝点1ながら、世界に実力を示す最高の船出となった。`),
+    ed('star','スター','メッシが満点10.0、エースが躍動',`<b>メッシが自身初のW杯ハットトリック</b>。アルゼンチンはアルジェリアを3-0で一蹴し、メッシは<b>評価10.0（満点）</b>を記録した。フランスの<b>エムバペ</b>（2発）、ノルウェーの<b>ハーランド</b>（2発）、ドイツの<b>ハーフェルツ</b>、アメリカの<b>バログン</b>、イングランドの<b>ケイン</b>も2得点と、各国のエースが軒並み結果を残した。`),
+    ed('goal','撃ち合い','大量点と壮絶な打ち合い',`<b>ドイツが7-1でキュラソーに大勝</b>し今節最多得点。<b>イングランド 4-2 クロアチア</b>はゴラッソが飛び交う撃ち合いに。<b>スウェーデン 5-1 チュニジア</b>（イサク＆ギェケレシュ）、<b>アメリカ 4-1 パラグアイ</b>、<b>ノルウェー 4-1 イラク</b>と、攻撃陣が爆発した試合が相次いだ。`),
+    ed('draw','波乱','優勝候補・強豪がまさかのドロー発進',`<b>ブラジル 1-1 モロッコ</b>、<b>ベルギー 1-1 エジプト</b>、<b>サウジアラビア 1-1 ウルグアイ</b>、<b>イラン 2-2 ニュージーランド</b>——優勝候補や強豪が軒並み勝点を取りこぼした。6大会連続出場のロナウド擁する<b>ポルトガルもコンゴ民主共和国と1-1</b>、支配率75%を奪いながら勝ちきれなかった。`),
+    ed('drama','ドラマ','開幕戦は史上初の3レッド、各地で名場面',`開幕戦は<b>メキシコが南アフリカを2-0</b>で下したが、<b>1試合3枚のレッドカード</b>が乱れ飛ぶ荒れた展開に。<b>韓国は2-1でチェコを逆転</b>、開催国<b>カナダはボスニアと1-1でW杯史上初の勝点</b>、<b>スコットランドは28年ぶりのW杯初戦白星</b>（ハイチに1-0）と、各地でドラマが生まれた。`)
+  ].join('');
+  return [
+    ed('star','スター','レジェンドが刻んだ歴史的記録',`<b>ロナウドがW杯史上初の6大会連続ゴール</b>を達成。ポルトガルはウズベキスタンを<b>5-0</b>で圧倒し、ロナウドは2発でこの偉業を打ち立てた。<b>メッシは2試合連続のマルチゴール</b>（オーストリア戦で2発、2節合計5得点）でアルゼンチンを2連勝に導き<b>評価9.2</b>。フランスの<b>エムバペ</b>（イラク戦2発）、ノルウェーの<b>ハーランド</b>（セネガル戦2発）もエースの務めを果たした。`),
+    ed('jp','日本代表','チュニジアに完勝、首位浮上の快進撃',`<b>チュニジア 0-4 日本</b>。アウェー支配率38%ながら効率よく沈めた快勝劇。開始4分に<b>鎌田大地</b>が先制すると、<b>上田綺世が2得点</b>（31分・83分）、<b>伊藤洋輝</b>も加えて4-0。初戦のオランダ戦ドローに続く大勝で<b>勝点4・グループF首位タイ</b>に浮上。最終節スウェーデン戦で突破を懸けた大一番を迎える。`),
+    ed('up','番狂わせ','優勝候補が連続スコアレス、混戦に',`優勝候補<b>ベルギーがイランと0-0</b>。支配率70%・好機を量産しながら2試合連続ドローで<b>勝点2に足踏み</b>し、グループGは大混戦に。<b>イングランドもガーナと0-0</b>、19本のシュートを放ちながら新興ガーナの堅守を破れず。<b>エクアドル0-0キュラソー</b>含め、地力で勝るはずの強国が軒並み取りこぼした一日となった。`),
+    ed('goal','撃ち合い','エース対決と大量得点が連発',`<b>ノルウェー 3-2 セネガル</b>はハーランドの2発を軸にした壮絶な点の取り合い。<b>オランダ 5-1 スウェーデン</b>（ブロブレイ＆ハフポ 各2発級の攻撃）、<b>カナダ 6-0 カタール</b>、<b>スペイン 4-0 サウジアラビア</b>、そして<b>日本 4-0 チュニジア</b>と、攻撃力に勝るチームがスコアを伸ばした。`),
+    ed('draw','突破争い','7チームが2連勝で16強へ前進',`<b>メキシコ・アメリカ・ドイツ・フランス・ノルウェー・アルゼンチン・コロンビア</b>の7チームが<b>2連勝（勝点6）</b>で突破に大きく前進。とりわけ<b>グループIはフランス・ノルウェーが揃って6pt</b>、最終節の直接対決が首位決定戦となる。一方<b>ウルグアイ・ベルギー</b>ら優勝候補は勝点2で足踏みし、最終節へ崖っぷちに追い込まれた。`),
+    ed('drama','ドラマ','名手の節目と、早すぎる崖っぷち',`<b>モドリッチが国際Aマッチ通算200試合出場</b>を花道に、クロアチアがパナマを1-0で下した。コロンビアの<b>ムニョスは2戦連発</b>でコンゴ撃破の決勝点。明暗の影では<b>チュニジア（得失点-8）・ウズベキスタン（-7）</b>をはじめ、トルコ・カタール・ヨルダン・イラク・パナマらが2連敗で早くも背水の陣に立たされた。`)
+  ].join('');
+}
+function renderRecap(){
+  // 集計済み（=その節の試合がすべて入力済み）の最大節を判定。既定は最新の集計済み節
+  const ready=[1,2,3].filter(md=>{const ids=mdIds(md);if(![...ids].length)return false;return G.gsMatches.filter(m=>ids.has(m.id)).every(m=>m.hs!=null);});
+  const maxReady=ready.length?Math.max(...ready):1;
+  let md=recapMD||maxReady;if(!ready.includes(md))md=maxReady;
+  const ids=mdIds(md);
+  const rd=G.gsMatches.filter(m=>ids.has(m.id));
+  const pl=rd.filter(m=>m.hs!=null&&m.as!=null);
+  const goals=pl.reduce((s,m)=>s+m.hs+m.as,0);
+  const draws=pl.filter(m=>m.hs===m.as).length;
+  // メンバー暫定順位＝その節終了時点までの累計（1..md 節の全試合）
+  const cum=new Set();for(let k=1;k<=md;k++)mdIds(k).forEach(x=>cum.add(x));
+  const mp={};G.players.forEach(p=>mp[p]=0);
+  G.gsMatches.filter(m=>cum.has(m.id)&&m.hs!=null).forEach(m=>{if(m.hs===m.as){[m.home,m.away].forEach(t=>{const o=owner(t);if(o)mp[o]+=0.5;});}else{const win=m.hs>m.as?m.home:m.away,los=m.hs>m.as?m.away:m.home,o=owner(win);if(o)mp[o]+=(G.config.gk&&isLow(tier(win))&&isHigh(tier(los)))?2:1;}});
+  const lb=G.players.map(p=>({p,t:mp[p]})).sort((a,b)=>b.t-a.t);const max=Math.max(1,lb[0].t);
+  const stat=(v,l)=>`<div class="rc-stat"><div class="rc-sv">${v}</div><div class="rc-sl">${l}</div></div>`;
+  const mem=lb.map((x,i)=>`<div class="rc-mem"><span class="rc-mrank">${i+1}</span><span class="rc-mdot" style="background:${pcol(x.p)}"></span><span class="rc-mnm">${esc(x.p)}</span><span class="rc-mbar"><i style="width:${Math.max(4,x.t/max*100)}%;background:${pcol(x.p)}"></i></span><span class="rc-mpt">${fmt(x.t)}<i>pt</i></span></div>`).join('');
+  const grp='ABCDEFGHIJKL'.split('').map(g=>{const ms=rd.filter(m=>m.group===g&&m.hs!=null).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));return `<div class="rc-grp"><span class="rc-gh">${g}組</span><div class="rc-gres">${ms.map(m=>`<span>${flag(m.home)} ${esc(m.home)} <b>${m.hs}-${m.as}</b> ${esc(m.away)} ${flag(m.away)}</span>`).join('')||'<span class="bk-tbd">未消化</span>'}</div></div>`;}).join('');
+  const intro={1:`全12グループの<b>初戦${pl.length}試合が出そろった</b>。開催国の明暗、強豪の取りこぼし、新興国の大健闘——波乱と熱狂に満ちた2026年大会の幕開けを振り返る。`,
+    2:`<b>第2節${pl.length}試合が終了</b>。レジェンドの歴史的記録、優勝候補の足踏み、そして7チームの突破前進——勢力図が一気に鮮明になった2巡目を振り返る。`,
+    3:`<b>グループステージ全72試合が完了し、決勝トーナメント進出32カ国が確定</b>。新興国の歴史的快挙、強豪の貫禄、そして惜別の波乱——グループリーグ最終節のすべてを振り返る。`}[md]||'';
+  const tabs=[1,2,3].filter(n=>ready.includes(n)).map(n=>`<button class="${n===md?'on':''}" onclick="setRecapMD(${n})">第${n}節<span class="en">MATCHDAY ${n}</span></button>`).join('');
+  document.getElementById('v-recap').innerHTML=`
+    ${ready.length>1?`<div class="rc-tabs">${tabs}</div>`:''}
+    <div class="barh">第${md}節 振り返り <span class="en">MATCHDAY ${md} RECAP</span></div>
+    <div class="note">${intro}</div>
+    <div class="rc-stats">${stat(pl.length,'試合')}${stat(goals,'ゴール')}${stat(draws,'引き分け')}${stat((goals/Math.max(1,pl.length)).toFixed(1),'1試合平均')}</div>
+    <div class="barh">メンバー暫定順位 <span class="en">STANDINGS</span></div>
+    <div class="hint">${md}巡終了時点の累計ポイント（保有国の勝敗から自動集計）。</div>
+    <div class="card">${mem}</div>
+    <div class="barh">編集部レビュー <span class="en">REVIEW</span></div>
+    ${recapEditorial(md)}
+    <div class="barh">各グループ 第${md}節の結果 <span class="en">RESULTS</span></div>
+    <div class="rc-grps">${grp}</div>
+    <div class="note">各試合の詳細（スタメン・スタッツ・DAZNハイライト・Sofascore選手レーティング）は「日程・結果」または「ホーム」タブでスコアをタップ。</div>`;
+}
+
+function oddsRow(key){
+  const o=G.odds&&G.odds[key];
+  if(!o||o.h==null)return '';
+  const inv=x=>x>0?1/x:0;const ih=inv(o.h),id=inv(o.d),ia=inv(o.a),s=ih+id+ia||1;
+  const ph=Math.round(ih/s*100),pd=Math.round(id/s*100),pa=Math.max(0,100-ph-pd);
+  const f=x=>x==null?'—':Number(x).toFixed(2);
+  return `<div class="odds">
+    <span class="oddbar"><i style="width:${ph}%;background:var(--lime)"></i><i style="width:${pd}%;background:#7d7568"></i><i style="width:${pa}%;background:var(--pink)"></i></span>
+    <span class="od win"><b>${f(o.h)}</b><i>勝</i></span>
+    <span class="od"><b>${f(o.d)}</b><i>分</i></span>
+    <span class="od lose"><b>${f(o.a)}</b><i>負</i></span>
+    <span class="olabel">ODDS</span></div>`;
+}
+function togMatch(key,pfx){pfx=pfx||'';
+  const el=document.getElementById('md-'+pfx+key),bt=document.getElementById('mx-'+pfx+key);
+  if(!el)return;
+  if(el.style.display!=='none'){el.style.display='none';if(bt)bt.textContent='▾';return;}
+  el.innerHTML=matchDetailHTML(key,pfx);el.style.display='block';if(bt)bt.textContent='▴';
+}
+function ratC(r){r=Number(r);return r>=7.5?'rh':r>=6.5?'rm':'rl';}
+// スタメンを横長フィールドに配置（Sofascore風：ホーム左/アウェイ右、レーティング付き）
+function lpNorm(lu){if(!lu)return{players:[]};if(Array.isArray(lu))return{players:lu};return{formation:lu.formation,players:lu.players||[]};}
+function lpSide(lu,side,color){
+  const ps=lpNorm(lu).players;const byRow={};
+  ps.forEach(p=>{let r,c=null;
+    if(p.grid){const g=String(p.grid).split(':');r=+g[0]||1;c=+g[1]||1;}
+    else {const o={GK:1,G:1,DF:2,D:2,MF:3,M:3,FW:4,F:4};r=o[p.pos]||3;}
+    (byRow[r]=byRow[r]||[]).push(Object.assign({},p,{_c:c}));});
+  const rows=Object.keys(byRow).map(Number).sort((a,b)=>a-b);const n=rows.length;let out='';
+  rows.forEach((r,ri)=>{
+    const band=byRow[r].slice().sort((a,b)=>(a._c||0)-(b._c||0));
+    const frac=n>1?ri/(n-1):0;const x=side==='home'?(4+frac*40):(96-frac*40);
+    band.forEach((p,j)=>{const y=7+(j+1)/(band.length+1)*86;
+      const rt=p.rating?`<span class="lp-rt ${ratC(p.rating)}">${Number(p.rating).toFixed(1)}</span>`:'';
+      const nm=esc(String(p.name||'').split(' ').pop());
+      out+=`<span class="lp-p" style="left:${x}%;top:${y}%"><span class="lp-dot" style="background:${color}"></span>${rt}<span class="lp-nm">${nm}</span></span>`;});
+  });
+  return out;
+}
+function lineupPitch(home,away,hN,aN){
+  const fH=lpNorm(home).formation,fA=lpNorm(away).formation;
+  return `<div class="lp-team"><span class="lp-dotk" style="background:var(--c6)"></span>${esc(hN)}${fH?` <span class="lp-f">${esc(fH)}</span>`:''}<span style="flex:1"></span>${fA?`<span class="lp-f">${esc(fA)}</span> `:''}${esc(aN)}<span class="lp-dotk" style="background:var(--c1)"></span></div>
+    <div class="lp-pitch dual"><span class="lp-mid"></span><span class="lp-circle"></span>${lpSide(home,'home','var(--c6)')}${lpSide(away,'away','var(--c1)')}</div>`;
+}
+function statsHTML(key,m){
+  const s=G.stats&&G.stats[key];
+  if(!s)return '<div class="mdet-h">スタメン・スタッツ <span class="src">SOFASCORE</span></div><div class="hint" style="margin:2px 0">準備中です（APIキー設定後に表示）。</div>';
+  let h='';
+  const sofa=s.sofa?`<a class="src lnk" href="${esc(s.sofa)}" target="_blank" rel="noopener noreferrer">SOFASCORE ↗</a>`:'<span class="src">SOFASCORE</span>';
+  if(s.lineups){h+=`<div class="mdet-h">スタメン ${sofa}</div>${lineupPitch(s.lineups.home,s.lineups.away,m.home,m.away)}`;}
+  h+=`<div class="mdet-h">スタッツ ${sofa}</div>`;
+  if(s.possession){const ph=s.possession[0],pa=s.possession[1];
+    h+=`<div class="st-poss"><span>${ph}%</span><div class="st-pbar"><i style="width:${ph}%"></i></div><span>${pa}%</span></div><div class="st-lbl2">ボール支配率</div>`;}
+  const cmp=(lab,a)=>{if(!a)return'';const x=a[0]||0,y=a[1]||0,t=(x+y)||1;
+    return `<div class="st-row"><span class="st-v">${x}</span><span class="st-lab">${lab}</span><span class="st-v">${y}</span></div><div class="st-cbar"><i class="l" style="width:${x/t*100}%"></i><i class="r" style="width:${y/t*100}%"></i></div>`;};
+  h+=cmp('シュート',s.shots)+cmp('枠内シュート',s.shotsOnTarget);
+  if(s.goals&&s.goals.length)h+=`<div class="st-sub">⚽ 得点者</div><div class="st-list">${s.goals.map(g=>`<div>${g.minute?`<b>${g.minute}'</b> `:''}${esc(g.player)} <span class="st-tm">${esc(g.team||'')}</span></div>`).join('')}</div>`;
+  if(s.cards&&s.cards.length)h+=`<div class="st-sub">🟨 カード</div><div class="st-list">${s.cards.map(c=>`<div><span class="st-card ${c.type==='R'?'r':'y'}"></span>${c.minute?`<b>${c.minute}'</b> `:''}${esc(c.player)} <span class="st-tm">${esc(c.team||'')}</span></div>`).join('')}</div>`;
+  if(s.subs){const sl=(arr,t)=>(arr&&arr.length)?`<div class="st-xicol"><div class="st-xih">${t}</div>${arr.map(x=>`<div class="st-pl"><span class="st-no">${x.minute?x.minute+"'":''}</span><span class="st-pn">${x.in?'▲'+esc(x.in):''}${x.out?` <span style="color:var(--muted)">▼${esc(x.out)}</span>`:''}</span>${x.rating?`<span class="st-rt ${ratC(x.rating)}">${Number(x.rating).toFixed(1)}</span>`:''}</div>`).join('')}</div>`:'';
+    const hs=sl(s.subs.home,esc(m.home)),as=sl(s.subs.away,esc(m.away));if(hs||as)h+=`<div class="st-sub">選手交代</div><div class="st-xi">${hs}${as}</div>`;}
+  return h;
+}
+function matchDetailHTML(key,pfx){
+  let m=G.gsMatches.find(x=>x.id===key);
+  if(!m)m=(G.koMatches||[]).find(x=>(x.home+'|'+x.away)===key);
+  if(!m)return '';
+  const played=(m.hs!=null&&m.as!=null)||(!m.id&&m.winner);
+  if(!played){
+    const od=oddsRow(key);
+    return `<div class="mdet">${od?`<div class="mdet-h">試合前 ・ オッズ <span class="src">勝/分/負</span></div>${od}`:'<div class="hint" style="margin:2px 0">オッズは未取得です（APIキー設定後に表示）。</div>'}</div>`;
+  }
+  const yid=ytId((G.highlights&&G.highlights[key])||m.highlight||'');
+  let h='<div class="mdet">';
+  h+=statsHTML(key,m);
+  if(pfx!=='h'){
+    h+='<div class="mdet-h">ハイライト <span class="src">DAZN</span></div>';
+    h+= yid?`<button class="hm-hl" onclick="openHL('${yid}')"><img src="https://img.youtube.com/vi/${yid}/hqdefault.jpg" loading="lazy" alt="ハイライト" onerror="this.parentNode.style.display='none'"><span class="hm-play">▶</span><span class="hm-hltxt">DAZN ハイライト</span></button>`:'<div class="hint" style="margin:2px 0">ハイライト未設定です。</div>';
+  }
+  h+='</div>';
+  return h;
+}
+let scFilter='all';
+function setScFilter(v){scFilter=v;renderScores();}
+function scMatch(m){
+  if(scFilter==='all')return true;
+  if(scFilter[0]==='g')return m.group===scFilter.slice(2);
+  if(scFilter[0]==='p'){const p=scFilter.slice(2);return owner(m.home)===p||owner(m.away)===p;}
+  return true;
+}
+function renderScores(){
+  const fms=G.gsMatches.filter(scMatch);
+  const byDate={};fms.forEach(m=>{(byDate[m.date]=byDate[m.date]||[]).push(m);});
+  const dates=Object.keys(byDate).sort();
+  const memOpts=G.players.map(p=>`<option value="p:${esc(p)}" ${scFilter==='p:'+p?'selected':''}>${esc(p)} の保有国</option>`).join('');
+  const grpOpts='ABCDEFGHIJKL'.split('').map(g=>`<option value="g:${g}" ${scFilter==='g:'+g?'selected':''}>グループ ${g}</option>`).join('');
+  let gs=`<div class="barh">グループステージ <span class="en">GROUP</span></div>`
+    +`<div class="row"><span class="lbl">フィルタ</span><select id="sc-filter" onchange="setScFilter(this.value)" style="flex:1;min-width:170px;font-weight:600;font-size:14px"><option value="all" ${scFilter==='all'?'selected':''}>全試合（${G.gsMatches.length}）</option><optgroup label="メンバーの保有国">${memOpts}</optgroup><optgroup label="グループ">${grpOpts}</optgroup></select><span class="hint" style="margin:0">${fms.length}試合</span></div>`
+    +`<div class="hint">各試合の <b>▾</b> をタップで詳細：試合前はオッズ、試合後はDAZNハイライトとスタッツ。</div>`;
+  if(!dates.length)gs+='<div class="hm-empty">該当する試合がありません。</div>';
+  dates.forEach(d=>{
+    const ms=byDate[d].sort((a,b)=>a.time.localeCompare(b.time));
+    let rows=ms.map(m=>`<div class="m">
+      <span class="tm">${m.time}</span><span class="gg">${m.group}</span>
+      <span class="tn">${flag(m.home)} ${esc(m.home)}</span>
+      <input type="number" min="0" value="${m.hs==null?'':m.hs}" onchange="setScore('${m.id}','h',this.value)">
+      <span class="x">-</span>
+      <input type="number" min="0" value="${m.as==null?'':m.as}" onchange="setScore('${m.id}','a',this.value)">
+      <span class="tn aw">${esc(m.away)} ${flag(m.away)}</span>
+      <button class="m-exp" id="mx-${m.id}" onclick="togMatch('${m.id}')" title="詳細">▾</button>
+    </div><div class="mdetail" id="md-${m.id}" style="display:none"></div>`).join('');
+    gs+=`<div class="day">${dstr(d)}</div>${rows}`;
+  });
+  const teamOpts=Object.keys(G.teams).sort().map(t=>`<option>${esc(t)}</option>`).join('');
+  const roundOpts=KO_ROUNDS.map(r=>`<option value="${r[0]}">${r[1]}（${r[2]}pt）</option>`).join('');
+  let kolist=(G.koMatches||[]).map((m,i)=>{const key=m.home+'|'+m.away;
+    return `<div class="m"><span class="gg">${KO_LABEL[m.round]||m.round}</span>
+    <span class="tn">${flag(m.home)} ${esc(m.home)} vs ${esc(m.away)} ${flag(m.away)}</span>
+    <span style="color:#9fe0b0;font-size:12px">勝:${esc(m.winner||'未定')}</span>
+    <button class="m-exp" id="mx-${esc(key)}" onclick="togMatch('${esc(key)}')" title="詳細">▾</button>
+    <button class="del" onclick="delKO(${i})">削除</button></div><div class="mdetail" id="md-${esc(key)}" style="display:none"></div>`;}).join('')||'<div class="hint">トーナメント開始後に追加します。</div>';
+  const ko=`<div class="barh">決勝トーナメント <span class="en">KNOCKOUT</span></div>
+    <div class="card">
+      <div class="row"><span class="lbl">ラウンド</span><select id="ko-round">${roundOpts}</select></div>
+      <div class="row"><span class="lbl">対戦</span><select id="ko-home"><option value="">―</option>${teamOpts}</select><span class="x">vs</span><select id="ko-away"><option value="">―</option>${teamOpts}</select></div>
+      <div class="row"><span class="lbl">勝者</span><select id="ko-win"><option value="">―</option>${teamOpts}</select><button class="btn sm" onclick="addKO()">＋追加</button></div>
+      <div style="margin-top:10px">${kolist}</div></div>`;
+  document.getElementById('v-scores').innerHTML=gs+koScheduleHTML()+ko;
+}
+
+function renderSettings(){
+  let pl=G.players.map((p,i)=>`<div class="row"><span class="lbl">P${i+1}</span>
+    <input value="${esc(p)}" style="flex:1;min-width:120px" onchange="setPlayer(${i},this.value)">
+    <input type="color" value="${pcol(p)}" onchange="setColor('${esc(p)}',this.value)"></div>`).join('');
+  const teamOptsFor=v=>`<option value="">―</option>`+Object.keys(G.teams).sort().map(t=>`<option ${v===t?'selected':''}>${esc(t)}</option>`).join('');
+  const pred=G.players.map(p=>{const pr=(G.predict||{})[p]||{};return `<div class="st-pred"><span class="lbl" style="color:${pcol(p)}">${esc(p)}</span>
+    <label>優勝<select onchange="setPredict('${esc(p)}','champ',this.value)">${teamOptsFor(pr.champ)}</select></label>
+    <label>準優勝<select onchange="setPredict('${esc(p)}','runnerup',this.value)">${teamOptsFor(pr.runnerup)}</select></label></div>`;}).join('');
+  const gr=groupsOf();let draft='';
+  for(const grp of Object.keys(gr).sort()){
+    let rows=gr[grp].map(t=>`<tr><td class="l">${flag(t)} ${esc(t)}</td>
+      <td><select onchange="setOwner('${esc(t)}',this.value)"><option value="">―</option>${G.players.map(p=>`<option ${owner(t)===p?'selected':''}>${esc(p)}</option>`).join('')}</select></td></tr>`).join('');
+    draft+=`<div class="gcard" style="margin-bottom:10px"><div class="gh">Group ${grp}</div>
+      <table><thead><tr><th class="l">国</th><th>保有者</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+  document.getElementById('v-settings').innerHTML=`
+    <div class="barh">メンバーと色 <span class="en">MEMBERS</span></div>
+    <div class="hint">各メンバーのテーマ色を設定（順位表バー・保有者バッジに反映）。</div>
+    <div class="card">${pl}</div>
+    <div class="barh">優勝・準優勝 予想 <span class="en">PREDICTION</span></div>
+    <div class="hint">ベスト4が出揃ったら入力。優勝国的中で <b>−5点</b>、準優勝国的中で <b>−3点</b>（両方で −8点）。</div>
+    <div class="card">${pred}</div>
+    <div class="barh">保有国の割り当て <span class="en">OWNERS</span></div>
+    <div class="hint">各メンバーが選んだ4カ国の保有者を設定（各自4カ国・計16カ国）。</div>
+    <div class="groups">${draft}</div>`;
+}
+
+function renderData(){
+  document.getElementById('v-data').innerHTML=`
+    <div class="barh">保存・書き出し <span class="en">SAVE</span></div>
+    <div class="note"><b>毎日の流れ：</b>① 結果入力 → ② 下の「最新データでHTMLをダウンロード」 → ③ 共有 / 再アップロード。全員が同じ最新版を見られます。</div>
+    <div class="card"><div class="row">
+      <button class="btn" onclick="exportHTML()">⬇ 最新データでHTMLをダウンロード</button>
+      <button class="btn ghost" onclick="copyJSON()">JSONをコピー</button></div><div class="row" style="margin-top:8px"><button class="btn ghost sm" onclick="saveConfig()">config.json を保存</button><button class="btn ghost sm" onclick="saveResults()">results.json を保存</button></div><p class="hint">自動更新セットでは、ドラフト後に <b>config.json</b>（保有者・色・ティア）をコミット。<b>results.json</b>（スコア）はGitHub Actionsが自動更新します。手動入力も引き続き可能です。</p>
+      <p class="hint" style="margin-top:12px">手動編集する場合は下を書き換えて「読み込む」：</p>
+      <textarea id="jsonbox">${esc(JSON.stringify(G,null,1))}</textarea>
+      <div class="row"><button class="btn ghost sm" onclick="loadJSON()">JSONを読み込む</button><span id="loadmsg" class="hint"></span></div></div>
+    <div class="note"><b>ウェブアプリ化：</b>このHTMLを <b>Netlify Drop</b>(netlify.com/drop にドラッグ) か <b>GitHub Pages</b> に置けば、全員が同じURLで閲覧可能。</div>`;
+}
+
+// 派生ビュー（結果・順位に依存）をまとめて再描画。編集中のタブ（設定/日程）は再生成しないので入力状態は保持される。
+function refresh(){syncData();renderHome();renderLB();renderPortfolio();renderGroups();renderRecap();renderBracket();}
+function setScore(id,s,v){const m=G.gsMatches.find(x=>x.id===id);if(!m)return;const val=v===''?null:Math.max(0,parseInt(v));if(s==='h')m.hs=val;else m.as=val;refresh();}
+function addKO(){const r=ko_round.value,h=ko_home.value,a=ko_away.value,w=ko_win.value;if(!h||!a||h===a){alert('対戦カードを正しく選択してください');return;}G.koMatches.push({round:r,home:h,away:a,winner:w});renderAll();}
+function delKO(i){G.koMatches.splice(i,1);renderAll();}
+function setPlayer(i,v){const old=G.players[i];const nu=v.trim()||old;G.players[i]=nu;
+  for(const t in G.teams)if(G.teams[t].owner===old)G.teams[t].owner=nu;
+  if(G.colors[old]!==undefined){G.colors[nu]=G.colors[old];if(nu!==old)delete G.colors[old];}
+  if(G.predict&&G.predict[old]!==undefined){G.predict[nu]=G.predict[old];if(nu!==old)delete G.predict[old];}
+  renderAll();}
+function setColor(p,v){G.colors[p]=v;refresh();}
+function setOwner(t,v){G.teams[t].owner=v||null;refresh();}
+function setPredict(p,kind,v){G.predict=G.predict||{};G.predict[p]=G.predict[p]||{champ:null,runnerup:null};G.predict[p][kind]=v||null;refresh();}
+function copyJSON(){navigator.clipboard.writeText(JSON.stringify(G)).then(()=>alert('コピーしました'));}
+function loadJSON(){try{G=JSON.parse(jsonbox.value);if(!G.colors)G.colors={};renderAll();loadmsg.textContent='✓ 読み込み完了';}catch(e){loadmsg.textContent='× JSONエラー';}}
+function exportHTML(){syncData();const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  const d=new Date();a.href=url;a.download=`wc2026_dashboard_${d.getMonth()+1}${('0'+d.getDate()).slice(-2)}.html`;a.click();URL.revokeObjectURL(url);}
+
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));document.getElementById('v-'+b.dataset.v).classList.add('on');});
+
+async function boot(){
+  try{
+    const [c,r,od,sq,pf,rc]=await Promise.all([fetch('config.json',{cache:'no-store'}),fetch('results.json',{cache:'no-store'}),fetch('odds.json',{cache:'no-store'}).catch(()=>null),fetch('squads.json',{cache:'no-store'}).catch(()=>null),fetch('teams_profiles.json',{cache:'no-store'}).catch(()=>null),fetch('recent.json',{cache:'no-store'}).catch(()=>null)]);
+    if(c.ok){const cfg=await c.json();if(cfg.players)G.players=cfg.players;if(cfg.colors)G.colors=cfg.colors;if(cfg.config)G.config=cfg.config;if(cfg.predict)G.predict=cfg.predict;if(cfg.teams)G.teams=cfg.teams;}
+    if(r.ok){const res=await r.json();if(res.gsMatches)G.gsMatches=res.gsMatches;if(res.koMatches)G.koMatches=res.koMatches;}
+    if(od&&od.ok){const o=await od.json();G.odds=o.odds||{};G.oddsUpdated=o.updated||null;}
+    if(sq&&sq.ok){const s=await sq.json();G.squads=s.squads||{};G.squadsUpdated=s.updated||null;}
+    if(pf&&pf.ok){const s=await pf.json();G.profiles=s.profiles||{};}
+    if(rc&&rc.ok){const s=await rc.json();G.recent=s.recent||{};}
+    const [hl,stt,nw,strg]=await Promise.all([fetch('highlights.json',{cache:'no-store'}).catch(()=>null),fetch('stats.json',{cache:'no-store'}).catch(()=>null),fetch('news.json',{cache:'no-store'}).catch(()=>null),fetch('strength.json',{cache:'no-store'}).catch(()=>null)]);
+    if(hl&&hl.ok){const s=await hl.json();G.highlights=s.highlights||{};}
+    if(stt&&stt.ok){const s=await stt.json();G.stats=s.stats||{};}
+    if(nw&&nw.ok){const s=await nw.json();G.news=s;}
+    if(strg&&strg.ok){G.strength=await strg.json();}
+  }catch(e){/* file:// やオフライン時は埋め込みデータで動作 */}
+  if(!G.colors)G.colors={};
+  if(!G.odds)G.odds={};
+  if(!G.squads)G.squads={};
+  if(!G.profiles)G.profiles={};
+  if(!G.recent)G.recent={};
+  if(!G.highlights)G.highlights={};
+  if(!G.stats)G.stats={};
+  if(!G.news)G.news={items:[]};
+  if(!G.strength)G.strength={teams:{},meta:{}};
+  rlState.remaining=null;
+  renderAll();
+}
+function dlJSON(name,obj){const b=new Blob([JSON.stringify(obj,null,1)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+function saveConfig(){dlJSON('config.json',{players:G.players,colors:G.colors,config:G.config,predict:G.predict,teams:G.teams});}
+function saveResults(){dlJSON('results.json',{gsMatches:G.gsMatches,koMatches:G.koMatches});}
+boot();
+</script>
 </body>
 </html>
